@@ -16,6 +16,7 @@
 - Q: Over a long night, should the carrier pitches stay fixed, or move slowly within the preferred range? → A: Very slow drift within the range, slow enough that no moment of change is perceptible.
 - Q: During calibration, should each judged tone be a real binaural pair or a single steady tone? → A: Real binaural pairs, with the beat rate held at one fixed sleep-appropriate value throughout.
 - Q: Should the app keep a record of past sessions, or remember nothing beyond profile and settings? → A: Remember the most recent session only; no accumulating history.
+- Q: The measured 100 Hz minimum spacing means a narrow preferred range cannot hold the two or three carriers FR-003 requires. Accept single-carrier sessions, or constrain calibration to produce a usable range? → A: Constrain calibration (new FR-020a); a single carrier is a thinner sound than was approved, and the range is calibration's output to guarantee.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -135,6 +136,7 @@ In settings, the listener reviews their saved profile, adjusts the preferred ran
 
 - **FR-019**: Calibration MUST present tones one at a time with two large tap targets covering roughly half the screen each: the lower for "relaxing", the upper for "not relaxing".
 - **FR-020**: Calibration MUST use the listener's judgments to narrow toward a preferred carrier pitch range, and MUST stop once further tones would not meaningfully narrow it or a maximum number of judgments is reached.
+- **FR-020a**: Calibration MUST NOT produce a preferred range too narrow to hold at least two carriers at the minimum spacing, plus the margin a pair needs around its centre. Where the listener's judgments would give a narrower range, calibration MUST widen it around the same centre and record that it did so. Added 2026-09-16 after measurement set the minimum spacing at 100 Hz, which made a narrower range physically unable to satisfy FR-003.
 - **FR-021**: Calibration MUST tune carrier pitch only. Beat rate is not calibrated in this feature.
 - **FR-021a**: Every tone presented during calibration MUST be a binaural pair, so the listener judges the same kind of sound a session produces. The beat rate MUST be held at a single sleep-appropriate value for the whole calibration, so that pitch is the only variable the listener is judging.
 - **FR-022**: Calibration MUST be interruptible and resumable, and MUST NOT overwrite an existing saved profile until a new calibration completes.

@@ -57,8 +57,16 @@ class ContinuityAnalyzer(
     private val sampleRate: Int,
     private val channels: Int,
     private val limits: ContinuityLimits,
-    /** How much audio each loudness measurement covers. */
-    private val rmsWindowFrames: Int = sampleRate / 20,
+    /**
+     * How much audio each loudness measurement covers. Half a second, not a few
+     * milliseconds: several carriers playing at once interfere, and that interference is
+     * real amplitude movement at the difference frequencies. A short window reads it as
+     * the level lurching about, when it is simply the texture of more than one tone.
+     * The window has to be long compared with those differences (100 Hz apart means
+     * 10 ms) so that what is left is the loudness trend, which is the thing Principle I
+     * is actually about.
+     */
+    private val rmsWindowFrames: Int = sampleRate / 2,
     private val maxViolationsKept: Int = 50,
 ) {
     init {
