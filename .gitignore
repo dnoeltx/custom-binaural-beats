@@ -1,2 +1,10 @@
 # Claude Code per-machine permission approvals
 .claude/settings.local.json
+
+# Build output
+build/
+.gradle/
+local.properties
+.idea/
+.kotlin/
+*.iml

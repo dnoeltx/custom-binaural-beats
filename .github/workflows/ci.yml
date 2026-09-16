@@ -1,0 +1,47 @@
+name: CI
+
+# Action versions verified against the GitHub releases API on 2026-09-16
+# (see specs/001-calibrated-sleep-sessions/research.md R8). Do not bump from
+# memory: check the current tag first.
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build & test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v7.0.1
+
+      - name: Set up JDK
+        uses: actions/setup-java@v6.0.1
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6.3.0
+
+      # :core:check runs the JVM tests and the constitution VII guard that fails
+      # if :core ever gains an Android dependency.
+      - name: Core module (tests + Android-free check)
+        run: ./gradlew :core:check --no-daemon
+
+      - name: App module unit tests
+        run: ./gradlew :app:testDebugUnitTest --no-daemon
+
+      - name: Assemble debug APK
+        run: ./gradlew :app:assembleDebug --no-daemon

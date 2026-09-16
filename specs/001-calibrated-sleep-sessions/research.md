@@ -93,3 +93,33 @@ For speed, the full-length tier 2 run uses a reduced analysis sample rate, with 
 **minSdk**: 26 is the floor implied by the APIs above (`AudioFocusRequest` and notification channels both arrived at 26, and Auto Backup at 23).
 
 **To verify at implementation, not from memory**: current Play target API requirement, current stable versions of Kotlin, Compose, DataStore and the Android Gradle Plugin, and the JDK version to pin. The owner's previous project was bitten by a stale version written from memory, which is exactly the failure this note exists to prevent.
+
+## R8. Toolchain versions (verified 2026-09-16, task T001)
+
+Queried from primary sources on the date above: Maven metadata for library artifacts, the GitHub releases API for actions, and vendor documentation for the rest. Re-verify before any future bump; do not copy these forward from memory.
+
+| Component | Version | Source |
+|---|---|---|
+| Kotlin | 2.4.20 (2026-09-07) | [kotlinlang.org releases](https://kotlinlang.org/docs/releases.html) |
+| Android Gradle Plugin | 9.4.0, requires Gradle 9.6.0+ and JDK 17+, max API 37 | [AGP release notes](https://developer.android.com/build/releases/gradle-plugin) |
+| Gradle | 9.7.0 | wrapper carried over from the owner's previous project, above the AGP minimum |
+| JDK | Temurin 21, pinned in `gradle/gradle-daemon-jvm.properties` | LTS, above the AGP minimum of 17 |
+| Compose BOM | 2026.09.00 | Google Maven metadata |
+| DataStore | 1.2.1 | Google Maven metadata (1.3.0 is alpha; stable chosen) |
+| lifecycle-service | 2.11.0 | Google Maven metadata (2.12.0 is alpha) |
+| activity-compose | 1.13.0 | Google Maven metadata (1.14.0 is alpha) |
+| kotlinx-serialization-json | 1.11.0 | Maven Central (1.12.0 is RC; stable chosen) |
+| kotlinx-coroutines-test | 1.11.0 | Maven Central |
+| Robolectric | 4.17 | Maven Central |
+| JUnit Jupiter | 6.1.3 | Maven Central |
+| actions/checkout | v7.0.1 (2026-07-20) | GitHub releases API |
+| actions/setup-java | v6.0.1 (2026-09-09) | GitHub releases API |
+| gradle/actions/setup-gradle | v6.3.0 (2026-08-02) | GitHub releases API |
+
+**Play target API requirement**: new apps and updates must target API 36 or higher as of 2026-08-31 ([Play target API docs](https://developer.android.com/google/play/requirements/target-sdk)).
+
+**SDK levels chosen**: `compileSdk` 37 (the maximum AGP 9.4.0 supports), `targetSdk` 36, `minSdk` 26. Targeting 36 satisfies Play while avoiding API 37 behavior changes that nothing in this feature needs. Revisit when a feature requires an API 37 capability.
+
+**Test frameworks**: `:core` uses JUnit Jupiter; `:app` uses JUnit 4 because Robolectric's runner requires it. A mixed setup is deliberate rather than accidental.
+
+**Method note worth recording**: a documentation page summarized the `gradle/actions` release as dated 2024. The GitHub releases API showed 2026-08-02 for the same tag. Version facts were taken from the API and from Maven metadata, never from a prose summary.
