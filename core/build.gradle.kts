@@ -14,6 +14,9 @@ kotlin {
 dependencies {
     implementation(libs.kotlinx.serialization.json)
     testImplementation(libs.junit.jupiter)
+    // Needed to call the suspending StateStore port from tests. kotlinx-coroutines is
+    // multiplatform, so it does not compromise this module's portability.
+    testImplementation(libs.kotlinx.coroutines.test)
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 

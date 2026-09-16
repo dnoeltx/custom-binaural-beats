@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The pre-Android 12 form of backup_rules.xml. Android 11 and older read
+  fullBackupContent; Android 12 and newer read dataExtractionRules. minSdk is 26, so
+  both are needed and they must agree.
+-->
+<full-backup-content>
+    <include domain="file" path="app_state.json" />
+</full-backup-content>

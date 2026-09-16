@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  T020: what Auto Backup carries to the listener's own account (FR-028, SC-007).
+
+  Only the app state file is included: the profile, settings, any calibration in
+  progress, and the most recent session record. Losing a profile to a reinstall would
+  cost the listener another twelve-minute calibration sitting, which is the reason this
+  exists at all.
+
+  Nothing here leaves the listener's own Google or Apple account. The app operates no
+  server (constitution VIII).
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <include domain="file" path="app_state.json" />
+    </cloud-backup>
+    <device-transfer>
+        <include domain="file" path="app_state.json" />
+    </device-transfer>
+</data-extraction-rules>

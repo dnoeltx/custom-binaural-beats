@@ -56,4 +56,8 @@ dependencies {
     testImplementation(libs.junit4)
     testImplementation(libs.robolectric)
     testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.androidx.test.core)
+    // :core is an implementation dependency above, which keeps it off the consumers'
+    // compile classpath but also off the test one. Tests need the model types.
+    testImplementation(project(":core"))
 }
