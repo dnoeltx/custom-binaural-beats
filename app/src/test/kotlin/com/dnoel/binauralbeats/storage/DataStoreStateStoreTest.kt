@@ -7,6 +7,7 @@ import com.dnoel.binauralbeats.core.model.SessionConfiguration
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
@@ -38,7 +39,7 @@ class DataStoreStateStoreTest {
     val temporaryFolder = TemporaryFolder()
 
     @After
-    fun tearDown() = DataStoreStateStore.simulateProcessRestart()
+    fun tearDown() = runTest { DataStoreStateStore.simulateProcessRestart() }
 
     @Test
     fun `writes and reads back a profile`() = runTest {
@@ -70,6 +71,48 @@ class DataStoreStateStoreTest {
         DataStoreStateStore.simulateProcessRestart()
 
         assertEquals(state.profile, DataStoreStateStore.forFile(file).read().profile)
+    }
+
+    @Test
+    fun `a simulated restart waits for the old store to actually stop`() = runTest {
+        // The regression test for the 2026-09-16 CI failure. simulateProcessRestart used
+        // to call cancel(), which only REQUESTS cancellation; DataStore keeps its claim
+        // on the file until the work finishes. Opening the next store inside that window
+        // throws "There are multiple DataStores active for the same file".
+        //
+        // HONEST LIMITATION, verified 2026-09-16: neither this test nor the 20 cycle one
+        // below could be proven non-vacuous on a developer machine. Removing the join and
+        // re-running left both of them green, because the race does not reproduce here
+        // and `isCompleted` turns true quickly once the work has nothing left to do.
+        // The fix is still right (cancel requests, join confirms), but the evidence for
+        // it is CI staying green, not a local mutation. Do not claim otherwise.
+        val file = newFile()
+        val store = DataStoreStateStore.forFile(file)
+        store.write(AppState(profile = ListenerProfile(150.0, 260.0, ProfileSource.CALIBRATED, 1L)))
+
+        assertFalse("a live store must not report itself stopped", store.isStopped)
+
+        DataStoreStateStore.simulateProcessRestart()
+
+        assertTrue(
+            "simulateProcessRestart must not return until the old store has finished",
+            store.isStopped,
+        )
+    }
+
+    @Test
+    fun `repeated restarts over one file never collide`() = runTest {
+        val file = newFile()
+        repeat(20) { cycle ->
+            val store = DataStoreStateStore.forFile(file)
+            store.write(
+                AppState(
+                    profile = ListenerProfile(150.0 + cycle, 260.0, ProfileSource.CALIBRATED, cycle.toLong())
+                )
+            )
+            assertEquals(150.0 + cycle, store.read().profile!!.lowHz, 0.0001)
+            DataStoreStateStore.simulateProcessRestart()
+        }
     }
 
     @Test
