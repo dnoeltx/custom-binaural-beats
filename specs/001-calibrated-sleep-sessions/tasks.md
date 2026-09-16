@@ -29,14 +29,17 @@ Several values are deliberately not invented (see the Measurement tasks table in
 
 **Purpose**: a compiling, testable two-module skeleton with the toolchain pinned.
 
-- [ ] T001 Verify current stable versions before writing any of them down: Kotlin, Android Gradle Plugin, Compose BOM, DataStore, kotlinx.serialization, JDK to pin, and the current Play target API requirement; record them with their source in `specs/001-calibrated-sleep-sessions/research.md` under "Toolchain versions (verified <date>)"
-- [ ] T002 Create the Gradle root with `settings.gradle.kts` including `:core` and `:app`, `build.gradle.kts`, `gradle.properties`, and the wrapper; set the application ID and confirm the package root
-- [ ] T003 Create the `:core` module as a plain Kotlin JVM module in `core/build.gradle.kts` with NO Android plugin and NO Android dependency, using the versions verified in T001
-- [ ] T004 Create the `:app` module in `app/build.gradle.kts` with Compose, Material 3, DataStore, kotlinx.serialization and lifecycle-service, depending on `:core`; set `minSdk` to 26 (the floor implied by `AudioFocusRequest` and notification channels, per plan.md) and `targetSdk`/`compileSdk` to the values verified in T001
-- [ ] T005 [P] Pin the JDK via `gradle/gradle-daemon-jvm.properties` so Gradle provisions it rather than using whatever is on PATH
-- [ ] T006 [P] Add `.gitignore` entries for Android and Gradle build output, `local.properties`, and IDE files, extending the existing root `.gitignore`
-- [ ] T007 [P] Add a failing placeholder test in `core/src/test/kotlin/com/dnoel/binauralbeats/core/SanityTest.kt` and make it pass, proving the JVM test path runs with no device
-- [ ] T008 Add a build check that fails if `:core` ever gains an Android dependency (a Gradle task asserting the `:core` configuration contains no `com.android.*` or `androidx.*` artifact), wired into `check` in `core/build.gradle.kts`
+- [x] T001 Verify current stable versions before writing any of them down: Kotlin, Android Gradle Plugin, Compose BOM, DataStore, kotlinx.serialization, JDK to pin, and the current Play target API requirement; record them with their source in `specs/001-calibrated-sleep-sessions/research.md` under "Toolchain versions (verified <date>)"
+- [x] T002 Create the Gradle root with `settings.gradle.kts` including `:core` and `:app`, `build.gradle.kts`, `gradle.properties`, and the wrapper; set the application ID and confirm the package root
+- [x] T003 Create the `:core` module as a plain Kotlin JVM module in `core/build.gradle.kts` with NO Android plugin and NO Android dependency, using the versions verified in T001
+- [x] T004 Create the `:app` module in `app/build.gradle.kts` with Compose, Material 3, DataStore, kotlinx.serialization and lifecycle-service, depending on `:core`; set `minSdk` to 26 (the floor implied by `AudioFocusRequest` and notification channels, per plan.md) and `targetSdk`/`compileSdk` to the values verified in T001
+- [x] T005 [P] Pin the JDK via `gradle/gradle-daemon-jvm.properties` so Gradle provisions it rather than using whatever is on PATH
+- [x] T006 [P] Add `.gitignore` entries for Android and Gradle build output, `local.properties`, and IDE files, extending the existing root `.gitignore`
+- [x] T007 [P] Add a failing placeholder test in `core/src/test/kotlin/com/dnoel/binauralbeats/core/SanityTest.kt` and make it pass, proving the JVM test path runs with no device
+- [x] T008 Add a build check that fails if `:core` ever gains an Android dependency (a Gradle task asserting the `:core` configuration contains no `com.android.*` or `androidx.*` artifact), wired into `check` in `core/build.gradle.kts`
+- [ ] T008c Add CI in `.github/workflows/ci.yml` running `:core:check`, `:app:testDebugUnitTest` and `:app:assembleDebug` on every pull request and push to `main`, with action versions verified against the GitHub releases API rather than written from memory. **Moved here from Phase 7 (was T069) on 2026-09-16**: leaving it until last would mean every PR from Phase 1 to Phase 6 merging into a protected `main` with no automated check, which defeats the protection. It cannot come earlier than this, because CI needs a project and a test to run
+- [x] T008e Write a short README at `README.md`: what the app is, an explicit in-development status, the problem it comes from, the process argument, and the design decisions already made. **No feature claims**, because no feature exists yet. Added 2026-09-16 because the repository is public and currently has no front door; the full README remains T072
+- [ ] T008d Enable the required status check on `main` once one CI run has passed, closing the gap deliberately left open at repository setup when no CI existed
 
 **Checkpoint**: `./gradlew :core:test` and `./gradlew :app:assembleDebug` both succeed, and constitution VII is enforced by the build rather than by discipline.
 
@@ -48,7 +51,7 @@ Several values are deliberately not invented (see the Measurement tasks table in
 
 **CRITICAL**: no user story work begins until this phase is complete.
 
-- [ ] T008b [P] Define the perceptible bounds as named constants in `core/src/main/kotlin/com/dnoel/binauralbeats/core/model/PerceptualBounds.kt` (maximum carrier frequency and maximum left/right difference), citing the source recorded in research.md, with a test in `core/src/test/kotlin/com/dnoel/binauralbeats/core/model/PerceptualBoundsTest.kt` asserting the scheduler can never produce a carrier or beat rate outside them (FR-002)
+- [x] T008b [P] Define the perceptible bounds as named constants in `core/src/main/kotlin/com/dnoel/binauralbeats/core/model/PerceptualBounds.kt` (maximum carrier frequency and maximum left/right difference), citing the source recorded in research.md, with a test in `core/src/test/kotlin/com/dnoel/binauralbeats/core/model/PerceptualBoundsTest.kt` asserting the scheduler can never produce a carrier or beat rate outside them (FR-002)
 - [ ] T009 [P] Write tests for the model value objects and their validation rules in `core/src/test/kotlin/com/dnoel/binauralbeats/core/model/ModelValidationTest.kt`, quoting the rules from data-model.md: `ListenerProfile.lowHz > 0`, `lowHz < highHz`, both within the perceptible carrier bound, and the range wide enough to hold `carrierCount` carriers at the minimum spacing
 - [ ] T010 Implement the model types in `core/src/main/kotlin/com/dnoel/binauralbeats/core/model/` per data-model.md: `AppState` (with `schemaVersion`), `ListenerProfile` (`lowHz`, `highHz`, `source` of CALIBRATED/PRESET/MANUAL, `createdAt`), `SessionConfiguration` (`beatArc` of DESCEND_THEN_HOLD/CONSTANT/DESCEND_THEN_VARY defaulting to DESCEND_THEN_HOLD, `endBehavior` defaulting to RunUntilStopped, `carrierCount` of 2 or 3 defaulting to 3, `volumeWarningAcknowledged` defaulting to false), `EndBehavior` (RunUntilStopped, AfterDuration, AtClockTime), `SessionRecord` (`endReason` of STOPPED_BY_LISTENER/COMPLETED_AS_CONFIGURED/OUTPUT_LOST/INTERRUPTED/UNKNOWN), `CalibrationSession`, `ToneJudgment`
 - [ ] T011 [P] Define the outbound ports in `core/src/main/kotlin/com/dnoel/binauralbeats/core/ports/` exactly as in contracts/core-api.md: `AudioSink`, `StateStore`, `Clock`
@@ -176,10 +179,10 @@ Several values are deliberately not invented (see the Measurement tasks table in
 - [ ] T066 [P] Assert the app emits no sound of its own (no chimes, no alerts) in `app/src/test/kotlin/com/dnoel/binauralbeats/playback/NoExtraSoundTest.kt` (FR-018), and in the same file assert the app never changes the system volume itself: no `setStreamVolume` or equivalent call exists anywhere in `:app` (FR-026)
 - [ ] T067 [P] Assert the app never holds the screen on and never bypasses the lock screen in `app/src/test/kotlin/com/dnoel/binauralbeats/ui/ScreenPolicyTest.kt` (FR-015)
 - [ ] T068 Confirm there is no network permission and no network code anywhere in `app/src/main/AndroidManifest.xml` and the source tree (FR-027, FR-028, constitution VIII)
-- [ ] T069 Add CI in `.github/workflows/ci.yml` running `:core:test` and `:app:testDebugUnitTest` on every pull request, and in the SAME pull request enable the required status check on `main` (constitution workflow section, and the deliberately deferred `required_status_checks` from repo setup)
+- [ ] T069 MOVED to Phase 1 as T008c and T008d on 2026-09-16. CI belongs at the start of implementation, not the end; see the note on T008c
 - [ ] T070 [P] Perform the mutation check from quickstart V4 (remove the fade-in, disable spacing enforcement, freeze the drift) and record in the pull request which named tests failed for each (constitution III)
 - [ ] T071 Run the full quickstart manual suite on the physical S24 (M1 through M7) and record results, including the overnight run and the backup and restore check
-- [ ] T072 [P] Write the README: what the app does, the calibration idea, the architecture argument for the pure-Kotlin core, the offline continuity test, the measured values and why they are what they are, and the honest note on binaural beat evidence (constitution VI)
+- [ ] T072 [P] Expand the README written in T008e: what the app does, the calibration idea, the architecture argument for the pure-Kotlin core, the offline continuity test, the measured values and why they are what they are, and the honest note on binaural beat evidence (constitution VI)
 - [ ] T073 [P] Capture screenshots for the README on the S24: the calibration screen, the dim in-session Stop, and the home screen in dark theme
 - [ ] T074 Decide whether FR-026a's volume rule should bind all future features; if so, amend the constitution to v1.1.0 in its own pull request (raised by plan.md)
 
@@ -194,7 +197,7 @@ Several values are deliberately not invented (see the Measurement tasks table in
 - **US2 (Phase 4)** depends on Phase 2 and reuses the US1 audio path; it does not depend on US1's UI.
 - **US3 (Phase 5)** depends on the scheduler from US1.
 - **US4 (Phase 6)** depends on US2 for a profile to edit, and on Phase 2 validation.
-- **Phase 7** depends on the playback path from US1; T069 (CI) can be done at any time and the earlier the better.
+- **Phase 7** depends on the playback path from US1. CI is no longer here: it moved to T008c and T008d in Phase 1.
 
 ## Parallel execution examples
 
