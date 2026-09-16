@@ -98,6 +98,102 @@ The same exchange exposed a test that passed for the wrong reason: a 200 Hz tone
 
 **To verify at implementation, not from memory**: current Play target API requirement, current stable versions of Kotlin, Compose, DataStore and the Android Gradle Plugin, and the JDK version to pin. The owner's previous project was bitten by a stale version written from memory, which is exactly the failure this note exists to prevent.
 
+## Measured values (listening session 2026-09-16, tasks M001 to M006)
+
+Constitution Principle V requires these to come from measurement rather than from taste
+or convenience, and to carry their reasoning. Method: candidate audio generated as WAV
+files, served to the phone over a USB tunnel, judged on Ozlo Sleepbuds at sleeping volume
+in a single sitting by the app's intended listener.
+
+**Method note that changed two of the answers.** The first round's spacing and drift
+answers both came back as the widest option offered, which measures the candidate set
+rather than the listener. Both were re-run with the range extended past that edge, and
+both then produced a real threshold. **An answer sitting at the boundary of the options is
+a sign the options were wrong.**
+
+| Task | Value | Basis |
+|---|---|---|
+| M001 fade in and out | **20 s** | Chosen from 2, 5, 10, 20, 30; not at an edge |
+| M002 analyzer limits | **computed**, not fixed: from sample rate, highest carrier and fade length | See note below |
+| M003 minimum carrier spacing | **100 Hz** | Two independent judgments, and it matches the critical band |
+| M004 beat rate | **1 to 2 Hz**, 3 acceptable, nothing at 4 or above | Preference, clearly graded |
+| M005 maximum drift rate | **10 Hz per minute** | Audible near 60, so a factor of six below |
+| M006 preset pitches | **100, 200, 400 Hz**, default 200 | Coverage over personal taste |
+
+### M003, and the carrier count rule it forces
+
+Three tones at once plateau in quality between 80 and 120 Hz of spacing ("120 sounds
+marginally better than 80, but not much, probably around 100"), and two tones warble at 80
+while sounding clean at 120. Two independent judgments put the boundary just under 100 Hz.
+
+This agrees with the auditory critical band, which is roughly 100 Hz wide around a 200 Hz
+centre: tones inside one band beat against each other and sound rough, and the roughness
+largely goes once they are further apart. The listener found the boundary the literature
+describes, which is evidence the number is real rather than a preference for one file.
+
+**Consequence for FR-003.** Three carriers at 100 Hz spacing need a preferred range at
+least 200 Hz wide, and calibration may return a narrower one. Two carriers at adequate
+spacing were judged fine. So carrier count is **derived from the range, not chosen by the
+listener**: fit as many carriers as the range allows at the minimum spacing, preferring
+spacing over count. Three where the range is 200 Hz or wider, two otherwise, and never
+three crowded closer than 100 Hz. Spacing is a measured acoustic threshold; carrier count
+is a preference, so spacing wins. `SessionConfiguration.carrierCount` is therefore a
+**maximum**, and `ListenerProfile.fitsCarriers()` decides the rest.
+
+### M004, and the shape of the arc
+
+"1 or 2 seems best, 3 is fine, 6 is unsettling, 4 is not great." DESCEND_THEN_HOLD
+therefore starts near 3, descends over the opening stretch, and holds between 1.5 and 2.
+Nothing at 4 Hz or above is used anywhere, including the opening.
+
+### M002, and why the analyzer limits are computed rather than fixed
+
+The three limits follow arithmetically from M001 and from the audio itself, so they are
+derived rather than chosen. Writing them as constants would be wrong, because two of the
+three depend on the highest carrier currently playing.
+
+- **`maxSampleDelta`.** The largest legitimate step between adjacent samples belongs to
+  the waveform: for a sine of amplitude `A` at frequency `f` sampled at `fs`, it is about
+  `A * 2 * pi * f / fs`. At 400 Hz and full scale that is about 0.057; at the 1000 Hz
+  perceptual ceiling it is about 0.143. The limit is that value for the highest carrier in
+  the session, plus headroom. A cut or click produces a step far larger than either.
+- **`maxSlopeChange`.** The legitimate second difference is about `A * (2 * pi * f / fs)^2`:
+  roughly 0.0032 at 400 Hz and 0.020 at 1000 Hz. A phase reversal at a zero crossing
+  produces roughly twice the first difference, which is two orders of magnitude larger.
+- **`maxBlockRmsChangePerSecond`.** A raised cosine fade over `T` seconds has a peak slope
+  of `pi / (2T)`. At the measured `T` of 20 seconds that is about 0.079 per second, so the
+  limit is that plus headroom. Anything louder-faster than the fade is by definition a
+  change the listener was not meant to notice.
+
+**The consequence: a fixed number would either reject a legitimate high carrier or accept
+a click at a low one.** The limits are produced by a function of sample rate, the session's
+highest carrier and the fade length, which is the same injected-parameter rule stated
+below. This is why `ContinuityLimits` was built as a passed-in value rather than a set of
+constants in the analyzer.
+
+### M005, and why the chosen value is far below the threshold
+
+Audibility begins around 60 Hz per minute for someone deliberately listening for movement,
+and 120 is obvious. The limit is set at 10 Hz per minute, six times lower, because the
+measurement came from an attentive listener while the app serves someone falling asleep,
+other listeners may be more sensitive, and slowing down costs nothing. The binding
+constraint is the bound rather than the rate: drift must stay inside the preferred range
+and therefore reverse, and at 10 Hz per minute a 100 Hz range takes ten minutes to cross.
+
+A file that drifts 40 Hz up and back over two minutes, which is the shape a session
+actually uses, was judged "nothing remarkable". That is the confirmation that matters.
+
+### These values must be injected, never hard-coded
+
+Every number above is a **perceptual threshold of one listener**. Spacing, drift and fade
+tolerance vary with hearing, age, earbuds and fit. A later version could measure each
+listener's own thresholds instead of shipping these (backlog, not this feature, because it
+would push the calibration sitting past the 12-minute budget in SC-004).
+
+That future is cheap only if the engine takes these as parameters now, the way
+`ContinuityAnalyzer` already takes `ContinuityLimits`. **No synthesis or scheduling code
+may embed them as literals.** Build the seam, not the feature.
+
 ## R8. Toolchain versions (verified 2026-09-16, task T001)
 
 Queried from primary sources on the date above: Maven metadata for library artifacts, the GitHub releases API for actions, and vendor documentation for the rest. Re-verify before any future bump; do not copy these forward from memory.

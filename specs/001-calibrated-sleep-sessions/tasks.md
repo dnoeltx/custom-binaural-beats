@@ -77,12 +77,12 @@ Several values are deliberately not invented (see the Measurement tasks table in
 
 ### Measurement first (these numbers feed the tests below)
 
-- [ ] M001 [US1] Measure fade-in and fade-out durations by listening at bedtime volume using the T015 render tool; choose the shortest that is not noticeable; record value and reasoning in research.md
-- [ ] M002 [US1] Derive the analyzer limits from M001 and encode them as `ContinuityLimits`: `maxSampleDelta`, `maxSlopeChange` (added 2026-09-16, see research R5) and `maxBlockRmsChangePerSecond`; record all three in research.md with reasoning
-- [ ] M003 [US1] Measure the minimum carrier spacing (FR-004) by rendering pairs at decreasing spacing and finding where roughness becomes audible; record value and reasoning in research.md
-- [ ] M004 [US1] Choose beat rate values for each arc and the descent duration within the published sleep range, confirm by listening, and record in research.md
-- [ ] M005 [US1] Measure the maximum imperceptible drift rate (FR-004a); record value and reasoning in research.md
-- [ ] M006 [US1] Choose the three preset pitch values (low, medium, high) spanning the usable carrier range; confirm by listening; record in research.md
+- [x] M001 [US1] Measure fade-in and fade-out durations by listening at bedtime volume using the T015 render tool; choose the shortest that is not noticeable; record value and reasoning in research.md
+- [x] M002 [US1] Derive the analyzer limits from M001 and encode them as `ContinuityLimits`: `maxSampleDelta`, `maxSlopeChange` (added 2026-09-16, see research R5) and `maxBlockRmsChangePerSecond`; record all three in research.md with reasoning
+- [x] M003 [US1] Measure the minimum carrier spacing (FR-004) by rendering pairs at decreasing spacing and finding where roughness becomes audible; record value and reasoning in research.md
+- [x] M004 [US1] Choose beat rate values for each arc and the descent duration within the published sleep range, confirm by listening, and record in research.md
+- [x] M005 [US1] Measure the maximum imperceptible drift rate (FR-004a); record value and reasoning in research.md
+- [x] M006 [US1] Choose the three preset pitch values (low, medium, high) spanning the usable carrier range; confirm by listening; record in research.md
 
 ### Tests for User Story 1 (written and failing before implementation)
 
