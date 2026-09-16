@@ -72,6 +72,10 @@ The app does not keep the screen on and does not bypass the lock screen (FR-015)
 
 For speed, the full-length tier 2 run uses a reduced analysis sample rate, with a full-rate run over shorter windows around every scheduled transition (session start, arc changes, fades, pause and resume). The reduced rate is legitimate here because the properties under test are envelope and parameter continuity, not audio bandwidth.
 
+**Refinement found while building the analyzer (2026-09-16, T013/T014)**: checking only the difference between adjacent samples is not enough. A waveform can be cut and restarted in opposite phase **at a zero crossing**, where every individual sample step stays tiny while the slope reverses. That is a corner rather than a step, and it is audible. The analyzer therefore checks the second difference as well, reported as a separate `SLOPE_STEP`, and `ContinuityLimits` carries `maxSlopeChange` alongside `maxSampleDelta`. M002 now sets three numbers, not two.
+
+The same exchange exposed a test that passed for the wrong reason: a 200 Hz tone cut at exactly one second ends at zero, so cutting to silence there produces no discontinuity at all. The test now cuts at a peak. Worth remembering when writing any audio test: the signal must actually contain the defect being hunted.
+
 **Determinism requirement**: the renderer MUST produce identical output for identical inputs, including any randomness used by the drift in FR-004a, which therefore takes an explicit seed. Without that, a failing continuity test could not be reproduced.
 
 ## R6. Volume warning level (FR-026a)
