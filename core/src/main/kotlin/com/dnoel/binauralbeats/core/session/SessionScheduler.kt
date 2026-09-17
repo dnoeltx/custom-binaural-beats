@@ -10,6 +10,7 @@ import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.sin
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
 
 /** Two tones, one per ear. Their difference is the beat. */
 data class CarrierPair(val leftHz: Double, val rightHz: Double) {
@@ -91,6 +92,32 @@ class SessionScheduler(
             rightHz[index] = centre + beatRateHz / 2.0
         }
         return gainAt(elapsed)
+    }
+
+    /**
+     * The lowest and highest tone this session would produce over [duration] (T042).
+     *
+     * Computed from the scheduler rather than observed from the audio thread: the
+     * scheduler is pure, so walking it is exact, costs nothing, and keeps measurement out
+     * of the rendering path. Reports tones, not carrier centres, because SC-005 is about
+     * what the listener actually hears.
+     */
+    fun toneRangeOver(
+        duration: Duration,
+        step: Duration = DEFAULT_RANGE_STEP,
+    ): ClosedFloatingPointRange<Double> {
+        var lowest = Double.MAX_VALUE
+        var highest = -Double.MAX_VALUE
+
+        var at = Duration.ZERO
+        while (at <= duration) {
+            for (pair in parametersAt(at).pairs) {
+                if (pair.leftHz < lowest) lowest = pair.leftHz
+                if (pair.rightHz > highest) highest = pair.rightHz
+            }
+            at += step
+        }
+        return lowest..highest
     }
 
     fun parametersAt(elapsed: Duration): SessionParameters {
@@ -226,6 +253,13 @@ class SessionScheduler(
     }
 
     private companion object {
+        /**
+         * Drift moves at most 10 Hz a minute (research M005), so sampling every fifteen
+         * seconds cannot miss an extreme by more than about 2.5 Hz, and in practice far
+         * less because a sine is flat at its turning points.
+         */
+        val DEFAULT_RANGE_STEP = 15.seconds
+
         const val MIN_BEAT_RATE_HZ = 0.75
         const val BEAT_CEILING_MARGIN_HZ = 0.05
         const val VARY_PERIOD_SECONDS = 90.0 * 60.0

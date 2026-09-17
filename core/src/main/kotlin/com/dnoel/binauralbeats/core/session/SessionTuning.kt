@@ -43,6 +43,13 @@ data class SessionTuning(
     val maxGainChangePerSecond: Double,
     val maxBeatRateChangePerSecond: Double,
 
+    /**
+     * How long a session waits for lost output to come back before ending (FR-024).
+     * A bud falling out or a walk out of range resolves well inside this; a flat battery
+     * never will.
+     */
+    val outputLossGrace: Duration,
+
     /** The presets offered before calibration, and which one is chosen by default. */
     val presetPitchesHz: List<Double>,
     val defaultPresetIndex: Int,
@@ -74,12 +81,19 @@ data class SessionTuning(
             fadeDuration = 20.seconds,
             minCarrierSpacingHz = 100.0,
             maxDriftHzPerMinute = 10.0,
-            openingBeatRateHz = 3.0,
-            holdBeatRateHz = 1.75,
+            // Revised 2026-09-17. The listening test put 1 to 2 Hz best and 3 "fine", and
+            // this held at 1.75. Then the track the listener actually sleeps to turned out
+            // to run at 3.2 Hz, constantly. A judgment made over hours of real use beats
+            // a 25 second impression, and 3 Hz was acceptable in the test as well, so the
+            // night now settles at 3 rather than 1.75.
+            openingBeatRateHz = 3.5,
+            holdBeatRateHz = 3.0,
             beatDescentDuration = 25.minutes,
             maxBeatRateHz = 4.0,
             maxGainChangePerSecond = 0.1,
             maxBeatRateChangePerSecond = 0.01,
+            // M008, proposed rather than measured: confirm or revise from real use.
+            outputLossGrace = 3.minutes,
             presetPitchesHz = listOf(100.0, 200.0, 400.0),
             defaultPresetIndex = 1,
         )
