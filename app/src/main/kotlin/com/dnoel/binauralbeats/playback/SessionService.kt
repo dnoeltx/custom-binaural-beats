@@ -12,6 +12,7 @@ import com.dnoel.binauralbeats.core.model.EndReason
 import com.dnoel.binauralbeats.core.model.ListenerProfile
 import com.dnoel.binauralbeats.core.model.ProfileSource
 import com.dnoel.binauralbeats.core.model.SessionRecord
+import com.dnoel.binauralbeats.core.playback.OutputAction
 import com.dnoel.binauralbeats.core.playback.PlaybackAction
 import com.dnoel.binauralbeats.core.session.Presets
 import com.dnoel.binauralbeats.core.session.SessionScheduler
@@ -47,6 +48,7 @@ class SessionService : Service() {
     private var writer: Thread? = null
     private var sink: AudioTrackSink? = null
     private var focus: FocusController? = null
+    private var outputWatcher: OutputWatcher? = null
     private var paused = false
     private var startedAtMillis = 0L
     private var renderSeed = 0L
@@ -115,6 +117,12 @@ class SessionService : Service() {
             val scheduler = SessionScheduler(profile, state.settings, tuning, renderSeed)
             val renderer = SessionRenderer(scheduler, AudioTrackSink.SAMPLE_RATE)
             val audioSink = AudioTrackSink().also { sink = it }
+
+            outputWatcher = OutputWatcher(
+                context = applicationContext,
+                grace = tuning.outputLossGrace,
+                onAction = ::onOutputAction,
+            ).also { it.start() }
 
             focus = FocusController(applicationContext, ::onFocusAction)
             if (focus?.request() != true) {
@@ -192,6 +200,30 @@ class SessionService : Service() {
         }
     }
 
+    /**
+     * FR-024. Pausing here stops the writer loop, so the session's clock stops with it and
+     * the arc resumes from where it paused rather than skipping ahead. The audio is never
+     * routed anywhere else while waiting.
+     */
+    private fun onOutputAction(action: OutputAction) {
+        when (action) {
+            OutputAction.PAUSE_AND_WAIT -> {
+                paused = true
+                sink?.setVolume(0f)
+                updateNotification()
+            }
+
+            OutputAction.RESUME_WITH_FADE -> {
+                paused = false
+                sink?.setVolume(1f)
+                updateNotification()
+            }
+
+            OutputAction.END_SESSION -> stopSession(EndReason.OUTPUT_LOST)
+            OutputAction.NONE -> Unit
+        }
+    }
+
     private fun updateNotification() {
         startForeground(
             SessionNotification.NOTIFICATION_ID,
@@ -215,6 +247,8 @@ class SessionService : Service() {
         sink = null
         focus?.abandon()
         focus = null
+        outputWatcher?.stop()
+        outputWatcher = null
         isRunning = false
 
         scope.launch {

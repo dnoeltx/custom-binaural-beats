@@ -43,6 +43,13 @@ data class SessionTuning(
     val maxGainChangePerSecond: Double,
     val maxBeatRateChangePerSecond: Double,
 
+    /**
+     * How long a session waits for lost output to come back before ending (FR-024).
+     * A bud falling out or a walk out of range resolves well inside this; a flat battery
+     * never will.
+     */
+    val outputLossGrace: Duration,
+
     /** The presets offered before calibration, and which one is chosen by default. */
     val presetPitchesHz: List<Double>,
     val defaultPresetIndex: Int,
@@ -85,6 +92,8 @@ data class SessionTuning(
             maxBeatRateHz = 4.0,
             maxGainChangePerSecond = 0.1,
             maxBeatRateChangePerSecond = 0.01,
+            // M008, proposed rather than measured: confirm or revise from real use.
+            outputLossGrace = 3.minutes,
             presetPitchesHz = listOf(100.0, 200.0, 400.0),
             defaultPresetIndex = 1,
         )
