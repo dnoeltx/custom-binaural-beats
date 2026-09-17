@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Binaural Beats</string>
+
+    <string name="channel_session_name">Playing session</string>
+    <string name="channel_session_description">Shows while a session is playing, and carries the stop control. Silent by design.</string>
+
+    <string name="session_playing">Playing</string>
+    <string name="session_paused">Paused</string>
+
+    <string name="action_start">Start</string>
+    <string name="action_stop">Stop</string>
+
+    <string name="pick_a_pitch">Pick a pitch</string>
+    <string name="preset_low">Low</string>
+    <string name="preset_medium">Medium</string>
+    <string name="preset_high">High</string>
+
+    <string name="headphones_required">Headphones needed: a binaural beat is a separate tone in each ear.</string>
+</resources>
