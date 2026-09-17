@@ -26,6 +26,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.concurrent.thread
+import kotlin.time.Duration.Companion.milliseconds
 
 /**
  * T035: the foreground service that keeps a session playing with the phone locked.
@@ -256,9 +257,24 @@ class SessionService : Service() {
             val state = store.read()
             val record = state.lastSession
             if (record != null && record.startedAtEpochMillis == startedAtMillis) {
+                // T042: what the session actually played, so SC-005 can be checked from
+                // the record. Computed from the scheduler, which is pure, rather than
+                // sampled on the audio thread.
+                val played = (endedAt - startedAtMillis).coerceAtLeast(0L).milliseconds
+                val toneRange = SessionScheduler(
+                    record.profile,
+                    record.configuration,
+                    SessionTuning.MEASURED,
+                    record.renderSeed,
+                ).toneRangeOver(played)
+
                 store.write(
                     state.copy(
-                        lastSession = record.copy(endedAtEpochMillis = endedAt, endReason = reason)
+                        lastSession = record.copy(
+                            endedAtEpochMillis = endedAt,
+                            endReason = reason,
+                            carrierSummary = listOf(toneRange.start, toneRange.endInclusive),
+                        )
                     )
                 )
             }

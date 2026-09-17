@@ -19,6 +19,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -28,8 +29,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.lifecycleScope
+import com.dnoel.binauralbeats.core.playback.SessionReconciler
 import com.dnoel.binauralbeats.core.session.SessionTuning
 import com.dnoel.binauralbeats.playback.SessionService
+import com.dnoel.binauralbeats.storage.DataStoreStateStore
+import kotlinx.coroutines.launch
 
 /**
  * A deliberately minimal screen: choose a preset pitch, start, stop.
@@ -51,6 +59,20 @@ class MainActivity : ComponentActivity() {
             requestNotifications.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
 
+        // T043: if the process was killed mid-session, nothing ran the cleanup, so the
+        // stored record still says a session is in progress. Close it honestly before
+        // anything reads it.
+        lifecycleScope.launch {
+            val store = DataStoreStateStore.forContext(applicationContext)
+            val stored = store.read()
+            val reconciled = SessionReconciler.reconcile(
+                state = stored,
+                serviceRunning = SessionService.isRunning,
+                nowMillis = System.currentTimeMillis(),
+            )
+            if (reconciled !== stored) store.write(reconciled)
+        }
+
         setContent {
             MaterialTheme(colorScheme = darkColorScheme()) {
                 Surface(modifier = Modifier.fillMaxSize()) {
@@ -67,6 +89,18 @@ private fun SessionControls() {
     val tuning = SessionTuning.MEASURED
     var selected by remember { mutableStateOf(tuning.defaultPresetHz) }
     var running by remember { mutableStateOf(SessionService.isRunning) }
+
+    // T043: the session can end without the screen asking for it, when the output is lost
+    // or focus is taken for good. Re-reading on resume keeps the button from claiming a
+    // session is playing when none is.
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) running = SessionService.isRunning
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
 
     Column(
         modifier = Modifier.fillMaxSize().padding(24.dp),
