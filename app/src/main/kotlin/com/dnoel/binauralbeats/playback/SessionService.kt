@@ -13,6 +13,7 @@ import com.dnoel.binauralbeats.core.model.ListenerProfile
 import com.dnoel.binauralbeats.core.model.ProfileSource
 import com.dnoel.binauralbeats.core.model.SessionRecord
 import com.dnoel.binauralbeats.core.playback.PlaybackAction
+import com.dnoel.binauralbeats.core.session.Presets
 import com.dnoel.binauralbeats.core.session.SessionScheduler
 import com.dnoel.binauralbeats.core.session.SessionTuning
 import com.dnoel.binauralbeats.notification.SessionNotification
@@ -126,29 +127,51 @@ class SessionService : Service() {
             writer = thread(name = "session-writer", priority = Thread.MAX_PRIORITY) {
                 val block = FloatArray(BLOCK_FRAMES * AudioTrackSink.CHANNELS)
                 var frame = 0L
-                while (!stopping.get()) {
-                    if (paused) {
-                        Thread.sleep(PAUSE_POLL_MILLIS)
-                        continue
+                var failure: EndReason? = null
+                try {
+                    while (!stopping.get()) {
+                        if (paused) {
+                            Thread.sleep(PAUSE_POLL_MILLIS)
+                            continue
+                        }
+                        renderer.render(block, BLOCK_FRAMES, frame)
+                        val written = audioSink.write(block, BLOCK_FRAMES)
+                        if (written <= 0) {
+                            // The sink stopped accepting audio: the output went away, or
+                            // the track was invalidated by a route change. On 2026-09-17
+                            // this loop simply broke, leaving the service foreground and
+                            // the notification saying "Playing" with nothing playing,
+                            // which is the state FR-025 forbids.
+                            Log.w(TAG, "sink accepted no frames; ending session")
+                            failure = EndReason.OUTPUT_LOST
+                            break
+                        }
+                        frame += written
                     }
-                    renderer.render(block, BLOCK_FRAMES, frame)
-                    val written = audioSink.write(block, BLOCK_FRAMES)
-                    if (written <= 0) break
-                    frame += written
+                } catch (e: InterruptedException) {
+                    Thread.currentThread().interrupt()
+                } catch (e: Throwable) {
+                    // A writer thread that dies silently is the same defect wearing a
+                    // different hat: the session must end, loudly and on the record.
+                    Log.e(TAG, "writer thread failed", e)
+                    failure = EndReason.INTERRUPTED
+                }
+
+                if (failure != null && !stopping.get()) {
+                    stopSession(failure)
                 }
             }
         }
     }
 
-    /** A preset choice becomes a profile centred on the chosen pitch. */
-    private fun presetProfile(presetHz: Double, state: AppState): ListenerProfile {
-        val tuning = SessionTuning.MEASURED
-        val centre = if (presetHz > 0.0) presetHz else tuning.defaultPresetHz
-        val halfWidth = tuning.minCarrierSpacingHz * state.settings.carrierCount / 2.0
-        val low = (centre - halfWidth).coerceAtLeast(1.0)
-        val high = (centre + halfWidth).coerceAtMost(900.0)
-        return ListenerProfile(low, high, ProfileSource.PRESET, System.currentTimeMillis())
-    }
+    /** A preset choice becomes a profile centred on the chosen pitch (see Presets). */
+    private fun presetProfile(presetHz: Double, state: AppState): ListenerProfile =
+        Presets.profileFor(
+            centreHz = presetHz,
+            tuning = SessionTuning.MEASURED,
+            carrierCount = state.settings.carrierCount,
+            nowMillis = System.currentTimeMillis(),
+        )
 
     private fun onFocusAction(action: PlaybackAction) {
         when (action) {
@@ -183,7 +206,10 @@ class SessionService : Service() {
         val underruns = sink?.underrunCount() ?: 0
         Log.i(TAG, "session ending: reason=$reason underruns=$underruns")
 
-        writer?.join(WRITER_JOIN_MILLIS)
+        // The writer can end the session itself when the sink fails, so it must not try
+        // to join itself: that would block this thread for the full timeout and delay the
+        // cleanup it is in the middle of.
+        writer?.takeIf { it != Thread.currentThread() }?.join(WRITER_JOIN_MILLIS)
         writer = null
         sink?.close()
         sink = null

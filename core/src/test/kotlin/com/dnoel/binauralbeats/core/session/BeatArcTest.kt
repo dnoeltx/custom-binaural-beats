@@ -28,7 +28,7 @@ class BeatArcTest {
     fun `the default arc starts near the top of the acceptable band`() {
         val start = scheduler(BeatArc.DESCEND_THEN_HOLD).parametersAt(tuning.fadeDuration).beatRateHz
         assertEquals(tuning.openingBeatRateHz, start, 0.15)
-        assertTrue(start <= 3.0, "the opening rate must not exceed the acceptable 3 Hz")
+        assertTrue(start < tuning.maxBeatRateHz, "the opening rate must stay under the measured ceiling")
     }
 
     @Test
@@ -50,7 +50,7 @@ class BeatArcTest {
         val settled = scheduler.parametersAt(tuning.beatDescentDuration).beatRateHz
 
         assertEquals(tuning.holdBeatRateHz, settled, 0.05)
-        assertTrue(settled in 1.5..2.0, "settled rate $settled is outside the band judged best")
+        assertTrue(settled in 2.5..3.5, "settled rate $settled is outside the band the listener actually sleeps to")
 
         for (hour in 1..10) {
             assertEquals(settled, scheduler.parametersAt(hour.hours).beatRateHz, 1e-6)
@@ -64,7 +64,7 @@ class BeatArcTest {
         for (hour in 1..10) {
             assertEquals(rate, scheduler.parametersAt(hour.hours).beatRateHz, 1e-9)
         }
-        assertTrue(rate in 1.5..2.0, "a constant night should sit in the settling band, was $rate")
+        assertTrue(rate in 2.5..3.5, "a constant night should sit in the settling band, was $rate")
     }
 
     @Test
@@ -74,7 +74,7 @@ class BeatArcTest {
         var at = tuning.beatDescentDuration + 30.seconds
         while (at <= 10.hours) {
             val now = scheduler.parametersAt(at).beatRateHz
-            assertTrue(now in 0.8..3.0, "varying arc reached $now at $at")
+            assertTrue(now in 2.0..3.9, "varying arc reached $now at $at")
             assertTrue(
                 abs(now - previous) / 30.0 <= tuning.maxBeatRateChangePerSecond + 1e-9,
                 "beat rate moved from $previous to $now in 30s at $at",
