@@ -6,46 +6,40 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.material3.Button
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.lifecycleScope
+import com.dnoel.binauralbeats.core.model.AppState
 import com.dnoel.binauralbeats.core.playback.SessionReconciler
 import com.dnoel.binauralbeats.core.session.SessionTuning
+import com.dnoel.binauralbeats.core.ui.Screen
+import com.dnoel.binauralbeats.core.ui.ScreenRouter
+import com.dnoel.binauralbeats.playback.OutputWatcher
 import com.dnoel.binauralbeats.playback.SessionService
 import com.dnoel.binauralbeats.storage.DataStoreStateStore
+import com.dnoel.binauralbeats.ui.HomeScreen
+import com.dnoel.binauralbeats.ui.PresetChoice
+import com.dnoel.binauralbeats.ui.SessionScreen
+import com.dnoel.binauralbeats.ui.WelcomeScreen
 import kotlinx.coroutines.launch
 
 /**
- * A deliberately minimal screen: choose a preset pitch, start, stop.
- *
- * This is NOT the interface described in the specification. The welcome flow, the
- * calibration screen and the dim in-session screen (T038 to T040) come next. This exists
- * so the engine can be run on real hardware overnight, which is the thing most likely to
- * be wrong and the thing a Compose layout cannot tell us about.
+ * Hosts the three screens. Which one appears is decided by [ScreenRouter] in :core, so the
+ * rule is testable without a device.
  */
 class MainActivity : ComponentActivity() {
 
@@ -76,7 +70,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             MaterialTheme(colorScheme = darkColorScheme()) {
                 Surface(modifier = Modifier.fillMaxSize()) {
-                    SessionControls()
+                    AppScreens()
                 }
             }
         }
@@ -84,76 +78,75 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-private fun SessionControls() {
+private fun AppScreens() {
     val context = LocalContext.current
     val tuning = SessionTuning.MEASURED
-    var selected by remember { mutableStateOf(tuning.defaultPresetHz) }
-    var running by remember { mutableStateOf(SessionService.isRunning) }
+    val presets = remember(tuning) {
+        val labels = listOf(R.string.preset_low, R.string.preset_medium, R.string.preset_high)
+        tuning.presetPitchesHz.mapIndexed { index, hz ->
+            PresetChoice(hz, labels.getOrElse(index) { R.string.preset_medium })
+        }
+    }
 
-    // T043: the session can end without the screen asking for it, when the output is lost
-    // or focus is taken for good. Re-reading on resume keeps the button from claiming a
-    // session is playing when none is.
+    var state by remember { mutableStateOf(AppState()) }
+    var sessionRunning by remember { mutableStateOf(SessionService.isRunning) }
+    var selected by remember { mutableStateOf(tuning.defaultPresetHz) }
+    var outputConnected by remember { mutableStateOf(true) }
+
+    // Everything here can change while the screen is away: a session can end on its own
+    // when the output is lost, and headphones come and go. Re-reading on resume keeps the
+    // screen from describing a state that has passed (FR-025).
     val lifecycleOwner = LocalLifecycleOwner.current
+    val store = remember(context) { DataStoreStateStore.forContext(context.applicationContext) }
+    var refreshCount by remember { mutableStateOf(0) }
+
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME) running = SessionService.isRunning
+            if (event == Lifecycle.Event.ON_RESUME) refreshCount++
         }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
-    Column(
-        modifier = Modifier.fillMaxSize().padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-    ) {
-        Text(
-            text = stringResource(R.string.pick_a_pitch),
-            style = MaterialTheme.typography.titleMedium,
+    LaunchedEffect(refreshCount) {
+        sessionRunning = SessionService.isRunning
+        state = store.read()
+        outputConnected = OutputWatcher(
+            context = context.applicationContext,
+            grace = tuning.outputLossGrace,
+            onAction = { },
+        ).anySuitableOutputConnected()
+    }
+
+    when (ScreenRouter.screenFor(state, sessionRunning)) {
+        Screen.SESSION -> SessionScreen(
+            onStop = {
+                SessionService.stop(context)
+                sessionRunning = false
+            }
         )
 
-        Column(modifier = Modifier.padding(vertical = 16.dp)) {
-            tuning.presetPitchesHz.forEachIndexed { index, hz ->
-                val label = when (index) {
-                    0 -> stringResource(R.string.preset_low)
-                    tuning.presetPitchesHz.lastIndex -> stringResource(R.string.preset_high)
-                    else -> stringResource(R.string.preset_medium)
-                }
-                FilterChip(
-                    selected = selected == hz,
-                    onClick = { selected = hz },
-                    enabled = !running,
-                    label = { Text("$label  ${hz.toInt()} Hz") },
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-                )
-            }
-        }
-
-        Button(
-            onClick = {
-                if (running) {
-                    SessionService.stop(context)
-                    running = false
-                } else {
-                    SessionService.start(context, selected)
-                    running = true
-                }
+        Screen.WELCOME -> WelcomeScreen(
+            presets = presets,
+            selected = selected,
+            onSelect = { selected = it },
+            onStart = {
+                SessionService.start(context, selected)
+                sessionRunning = true
             },
-            modifier = Modifier.fillMaxWidth().size(width = 0.dp, height = 72.dp),
-        ) {
-            Text(
-                text = if (running) stringResource(R.string.action_stop) else stringResource(R.string.action_start),
-                fontSize = 20.sp,
-            )
-        }
+            outputWarning = !outputConnected,
+        )
 
-        Text(
-            text = stringResource(R.string.headphones_required),
-            style = MaterialTheme.typography.bodySmall,
-            modifier = Modifier.padding(top = 24.dp),
+        Screen.HOME -> HomeScreen(
+            profile = state.profile,
+            presets = presets,
+            selected = selected,
+            onSelect = { selected = it },
+            onStart = {
+                SessionService.start(context, selected)
+                sessionRunning = true
+            },
+            outputWarning = !outputConnected,
         )
     }
 }
-
-@Composable
-private fun stringResource(id: Int): String = LocalContext.current.getString(id)

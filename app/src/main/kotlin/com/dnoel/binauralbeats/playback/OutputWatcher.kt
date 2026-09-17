@@ -11,7 +11,9 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import com.dnoel.binauralbeats.core.playback.OutputAction
+import com.dnoel.binauralbeats.core.playback.OutputKind
 import com.dnoel.binauralbeats.core.playback.OutputLossPolicy
+import com.dnoel.binauralbeats.core.playback.OutputSuitability
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -112,16 +114,24 @@ class OutputWatcher(
         const val TAG = "OutputWatcher"
 
         /**
-         * Headphones of some kind, never a speaker: a binaural beat does not exist without
-         * a separate tone in each ear, and the phone's own speaker would wake the room.
+         * Translation only. The rule about what may be played through lives in
+         * [OutputSuitability] in :core, where it is tested; this maps Android's constants
+         * onto it and nothing more.
          */
+        val AudioDeviceInfo.outputKind: OutputKind
+            get() = when (type) {
+                AudioDeviceInfo.TYPE_WIRED_HEADPHONES -> OutputKind.WIRED_HEADPHONES
+                AudioDeviceInfo.TYPE_WIRED_HEADSET -> OutputKind.WIRED_HEADSET
+                AudioDeviceInfo.TYPE_USB_HEADSET -> OutputKind.USB_HEADSET
+                AudioDeviceInfo.TYPE_BLUETOOTH_A2DP -> OutputKind.BLUETOOTH_A2DP
+                AudioDeviceInfo.TYPE_BLE_HEADSET -> OutputKind.BLE_HEADSET
+                AudioDeviceInfo.TYPE_BLE_SPEAKER -> OutputKind.BLUETOOTH_SPEAKER
+                AudioDeviceInfo.TYPE_BUILTIN_SPEAKER -> OutputKind.BUILTIN_SPEAKER
+                AudioDeviceInfo.TYPE_BUILTIN_EARPIECE -> OutputKind.BUILTIN_EARPIECE
+                else -> OutputKind.OTHER
+            }
+
         val AudioDeviceInfo.isSuitableForSession: Boolean
-            get() = type in setOf(
-                AudioDeviceInfo.TYPE_BLUETOOTH_A2DP,
-                AudioDeviceInfo.TYPE_BLE_HEADSET,
-                AudioDeviceInfo.TYPE_WIRED_HEADPHONES,
-                AudioDeviceInfo.TYPE_WIRED_HEADSET,
-                AudioDeviceInfo.TYPE_USB_HEADSET,
-            )
+            get() = OutputSuitability.isSuitable(outputKind)
     }
 }

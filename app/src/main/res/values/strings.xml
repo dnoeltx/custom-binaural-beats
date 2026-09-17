@@ -16,5 +16,14 @@
     <string name="preset_medium">Medium</string>
     <string name="preset_high">High</string>
 
+    <string name="welcome_title">Sound to sleep to</string>
+    <string name="welcome_body">Two quiet tones, one in each ear, that pulse slowly together. It runs all night and never changes abruptly.</string>
+
+    <string name="your_sound">Your sound</string>
+    <string name="profile_calibrated">Tuned to you, around %1$d Hz</string>
+    <string name="profile_preset">Around %1$d Hz</string>
+    <string name="profile_manual">Set by you, around %1$d Hz</string>
+
     <string name="headphones_required">Headphones needed: a binaural beat is a separate tone in each ear.</string>
+    <string name="headphones_missing">No headphones connected. You can start anyway, but there is no binaural beat without one tone per ear.</string>
 </resources>
