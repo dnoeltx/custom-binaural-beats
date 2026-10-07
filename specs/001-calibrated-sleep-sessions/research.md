@@ -194,6 +194,63 @@ That future is cheap only if the engine takes these as parameters now, the way
 `ContinuityAnalyzer` already takes `ContinuityLimits`. **No synthesis or scheduling code
 may embed them as literals.** Build the seam, not the feature.
 
+## R9. How calibration searches (decided 2026-09-17)
+
+**Decision**: sample and fit, in two passes. A spread of tones is judged, then a band is
+fitted across all the verdicts, then a few more tones sharpen the edges the first pass
+suggested.
+
+**Rejected: an adaptive staircase.** It was the first suggestion, and it is wrong here for
+a structural reason rather than a matter of taste. A staircase is built for a **monotonic**
+threshold, the "can you still hear this" question, where the answer flips once and stays
+flipped. Preference over pitch is not monotonic: too low is unpleasant, the middle is
+good, too high is unpleasant again. That is a band with two edges, which a single
+staircase cannot represent. Running two, one per edge, needs each to know which side of
+the good region it began on, and that is fragile.
+
+**Rejected: bisection.** Fast, and it assumes every answer is correct. One mistaken tap
+sends the search somewhere wrong with no way back.
+
+**Why the main objection to sample and fit fell away.** It needs more tones than a
+staircase, which looked expensive when the assumption was that a drowsy listener would be
+tapping. The owner corrected that assumption: **calibration happens before bedtime, not
+while falling asleep.** Nobody installs an app and calibrates it while trying to sleep. An
+alert listener can judge more tones, and judge them more accurately, so the extra cost is
+affordable and the noise it defends against is rarer than assumed.
+
+**Robustness, which is the deciding property.** One bad verdict among a dozen moves a
+fitted band slightly. One bad verdict in a staircase sends it in the wrong direction and
+costs several more tones to recover. The failure degrades gently instead of sharply.
+
+**It also produces what the app needs.** The profile is a range, `lowHz` and `highHz`, not
+a centre. A fit yields both edges directly; a threshold search yields one number.
+
+### Shape
+
+1. **Coarse pass**: eight to ten tones spread across the usable carrier range, finding
+   roughly where the good region sits.
+2. **Refinement pass**: a handful more placed near the two candidate edges.
+3. **Fit** a band across every verdict gathered, both passes together.
+4. **Widen if necessary** to satisfy FR-020a, which requires a range wide enough for two
+   carriers at the measured minimum spacing plus the beat margin, centred on the same
+   place, recording that it was widened.
+
+Every tone is a real binaural pair at a fixed sleep-appropriate beat rate (FR-021a), so
+the listener judges the kind of sound a session actually makes.
+
+### Deliberately open, for M007
+
+Whether a tone plays for a fixed duration or until the listener taps. Fixed is predictable
+and keeps the twelve-minute budget (SC-004) honest; tap-to-advance is quicker on obvious
+tones but makes the sitting's length unpredictable. This is a listening question, not
+something to settle on paper.
+
+### How it gets tested
+
+A simulated listener with a known preferred band and a probability of tapping wrong. The
+test asserts the fitted band lands close to the truth despite that noise, which is a
+meaningful claim, unlike asserting that a search terminated.
+
 ## R8. Toolchain versions (verified 2026-09-16, task T001)
 
 Queried from primary sources on the date above: Maven metadata for library artifacts, the GitHub releases API for actions, and vendor documentation for the rest. Re-verify before any future bump; do not copy these forward from memory.
