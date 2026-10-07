@@ -91,6 +91,35 @@ app/                                   # Android only. Thin.
 
 **Structure Decision**: two modules, `:core` and `:app`, as decided by the owner before planning. The separation is not stylistic: it is how constitution VII is enforced mechanically rather than by discipline, and it is what keeps a ten-hour render runnable on a laptop. Converting `:core` to a Kotlin Multiplatform module later must remain a build-configuration change, which is why nothing in it may reference a JVM-only API without noting it.
 
+## Calibration search (added 2026-09-17, before US2 work begins)
+
+**Approach: sample and fit**, chosen over an adaptive staircase and over bisection. The
+full reasoning is in [research.md](./research.md) R9; the short version is that preference
+over pitch is a **band with two edges**, not a monotonic threshold, so a staircase cannot
+represent the thing being measured, and that calibration happens **before bedtime** rather
+than while falling asleep, which makes the extra tones a sample needs affordable.
+
+Structure in `:core`, behind the `CalibrationSearch` contract already defined in
+[contracts/core-api.md](./contracts/core-api.md):
+
+- **`CalibrationSearchState`** holds every judgment gathered plus which pass is running, so
+  an interrupted sitting resumes exactly (FR-022).
+- **`next(state)`** places the tone to present: spread across the usable range in the
+  coarse pass, near the candidate edges in the refinement pass, and null when both passes
+  are done or the maximum number of judgments is reached (FR-020).
+- **`result(state)`** fits a band across all judgments from both passes, then applies
+  FR-020a's minimum width, widening around the same centre and recording that it did.
+- An all-rejecting or all-accepting listener yields **no result** rather than a fabricated
+  band, and the caller offers a retry or a preset (spec edge case).
+
+The fit itself is deliberately simple to start with: the accepted tones bound the band, and
+isolated rejections inside a run of acceptances are treated as noise rather than as edges.
+Anything more elaborate should be justified by the simulated-listener test failing, not by
+appetite.
+
+**Not calibrated here**: beat rate (FR-021). Every tone is a real binaural pair at one
+fixed sleep-appropriate rate (FR-021a), so the listener judges the sound a session makes.
+
 ## Measurement tasks (values this plan deliberately does not invent)
 
 Per constitution Principle V, these are set by measurement or listening during implementation and recorded with their reasoning. They are inputs to `/speckit-tasks`, not decisions made here.
