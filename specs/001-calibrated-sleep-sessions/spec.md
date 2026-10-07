@@ -155,6 +155,11 @@ In settings, the listener reviews their saved profile, adjusts the preferred ran
 
 - **FR-028**: The profile, configuration, and calibration results MUST be stored on the device, MUST survive reinstalling the app through the platform's own backup, and MUST NOT be sent to any service operated by this project.
 - **FR-029**: The system MUST retain a record of the most recent session only: when it started, how it ended, and what it played. Starting a new session MUST replace it. No accumulating history is kept, and no session history screen is part of this feature.
+- **FR-029a**: The system MUST retain a bounded diagnostics record of how recent sessions ended: at most the last 20, each holding when the session started and ended, how it ended, and the underrun count observed. Starting a new session MUST NOT clear it, and the oldest entry is dropped once the limit is reached.
+
+  This is a deliberate and narrow exception to FR-029, added 2026-10-07. A session stopped after about two hours during an overnight run and **no evidence survived**: the single most-recent-session record had already been overwritten by a later test, and the system log had rotated. Without a bounded record, a failure that happens once a fortnight takes a fortnight to investigate. The exception stays inside Principle VIII: on the device, no network, no accounts.
+
+  It is **not a feature**. There is no history screen, nothing in the interface presents it, and it exists so the owner and a developer can read what happened.
 
 ### Key Entities
 
