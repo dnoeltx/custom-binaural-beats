@@ -71,4 +71,53 @@ class PresetsTest {
         val defaulted = Presets.profileFor(tuning.defaultPresetHz, tuning, carrierCount = 3, nowMillis = 0L)
         assertEquals(defaulted, zero)
     }
+
+    @Test
+    fun `every preset is centred on the pitch it names`() {
+        // Found on hardware 2026-10-08. The low preset produced a range of 40 to 202 Hz,
+        // centred at 121 rather than 100, because the range was built as the centre plus
+        // and minus a fixed half width and then clamped at the bottom. The clamp moved the
+        // whole band upward, so "Low 100 Hz" played tones near 56 and 186 Hz.
+        for (pitch in tuning.presetPitchesHz) {
+            val profile = Presets.profileFor(pitch, tuning, carrierCount = 3, nowMillis = 0L)
+            val centre = (profile.lowHz + profile.highHz) / 2
+            assertEquals(pitch, centre, 1.0, "preset $pitch is centred at $centre")
+        }
+    }
+
+    @Test
+    fun `a preset near the bottom of the range uses fewer carriers rather than skewing`() {
+        // 100 Hz cannot hold three carriers 100 Hz apart without going below zero, so it
+        // takes two and stays honest about where it is centred.
+        val profile = Presets.profileFor(100.0, tuning, carrierCount = 3, nowMillis = 0L)
+        val scheduler = SessionScheduler(
+            profile,
+            SessionConfiguration(carrierCount = 3),
+            tuning,
+            seed = 1L,
+        )
+
+        assertEquals(2, scheduler.carrierCount)
+        val centres = scheduler.parametersAt(kotlin.time.Duration.ZERO).pairs.map { it.centreHz }
+        assertTrue(centres.min() > 40.0, "lowest carrier ${centres.min()} is still near the floor")
+        assertEquals(100.0, centres.average(), 6.0, "carriers average ${centres.average()}")
+    }
+
+    @Test
+    fun `every tone a preset produces stays near its named pitch`() {
+        for (pitch in tuning.presetPitchesHz) {
+            val profile = Presets.profileFor(pitch, tuning, carrierCount = 3, nowMillis = 0L)
+            val range = SessionScheduler(
+                profile,
+                SessionConfiguration(),
+                tuning,
+                seed = 3L,
+            ).toneRangeOver(kotlin.time.Duration.parse("2h"))
+
+            assertTrue(
+                range.start > pitch / 2.5 && range.endInclusive < pitch * 2.5,
+                "preset $pitch played ${range.start} to ${range.endInclusive}",
+            )
+        }
+    }
 }
