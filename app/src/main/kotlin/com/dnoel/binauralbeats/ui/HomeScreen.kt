@@ -68,10 +68,10 @@ fun HomeScreen(
 /** Plain language, because numbers are for the settings screen, not for bedtime. */
 @Composable
 private fun ListenerProfile.describe(): String {
-    val centre = ((lowHz + highHz) / 2).toInt()
+    val center = ((lowHz + highHz) / 2).toInt()
     return when (source) {
-        ProfileSource.CALIBRATED -> stringRes(R.string.profile_calibrated).format(centre)
-        ProfileSource.PRESET -> stringRes(R.string.profile_preset).format(centre)
-        ProfileSource.MANUAL -> stringRes(R.string.profile_manual).format(centre)
+        ProfileSource.CALIBRATED -> stringRes(R.string.profile_calibrated).format(center)
+        ProfileSource.PRESET -> stringRes(R.string.profile_preset).format(center)
+        ProfileSource.MANUAL -> stringRes(R.string.profile_manual).format(center)
     }
 }

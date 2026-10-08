@@ -19,25 +19,25 @@ class PresetsTest {
     private val tuning = SessionTuning.MEASURED
 
     @Test
-    fun `a preset centres the carriers on the chosen pitch`() {
+    fun `a preset centers the carriers on the chosen pitch`() {
         val profile = Presets.profileFor(200.0, tuning, carrierCount = 3, nowMillis = 0L)
-        val centres = SessionScheduler(
+        val centers = SessionScheduler(
             profile,
             SessionConfiguration(carrierCount = 3),
             tuning,
             seed = 1L,
-        ).parametersAt(kotlin.time.Duration.ZERO).pairs.map { it.centreHz }
+        ).parametersAt(kotlin.time.Duration.ZERO).pairs.map { it.centerHz }
 
-        assertEquals(3, centres.size)
-        assertEquals(200.0, centres.average(), 1.0, "carriers should sit around the chosen pitch")
-        assertTrue(centres.min() > 80.0, "lowest carrier ${centres.min()} is far below the preset")
-        assertTrue(centres.max() < 320.0, "highest carrier ${centres.max()} is far above the preset")
+        assertEquals(3, centers.size)
+        assertEquals(200.0, centers.average(), 1.0, "carriers should sit around the chosen pitch")
+        assertTrue(centers.min() > 80.0, "lowest carrier ${centers.min()} is far below the preset")
+        assertTrue(centers.max() < 320.0, "highest carrier ${centers.max()} is far above the preset")
     }
 
     @Test
     fun `a preset range is exactly wide enough for its carriers, and no wider`() {
         val profile = Presets.profileFor(200.0, tuning, carrierCount = 3, nowMillis = 0L)
-        // Two gaps at the minimum spacing, plus the margin a pair needs around its centre.
+        // Two gaps at the minimum spacing, plus the margin a pair needs around its center.
         val expected = tuning.minCarrierSpacingHz * 2 + tuning.maxBeatRateHz
         assertEquals(expected, profile.widthHz, 0.001)
     }
@@ -73,22 +73,22 @@ class PresetsTest {
     }
 
     @Test
-    fun `every preset is centred on the pitch it names`() {
+    fun `every preset is centered on the pitch it names`() {
         // Found on hardware 2026-10-08. The low preset produced a range of 40 to 202 Hz,
-        // centred at 121 rather than 100, because the range was built as the centre plus
+        // centered at 121 rather than 100, because the range was built as the center plus
         // and minus a fixed half width and then clamped at the bottom. The clamp moved the
         // whole band upward, so "Low 100 Hz" played tones near 56 and 186 Hz.
         for (pitch in tuning.presetPitchesHz) {
             val profile = Presets.profileFor(pitch, tuning, carrierCount = 3, nowMillis = 0L)
-            val centre = (profile.lowHz + profile.highHz) / 2
-            assertEquals(pitch, centre, 1.0, "preset $pitch is centred at $centre")
+            val center = (profile.lowHz + profile.highHz) / 2
+            assertEquals(pitch, center, 1.0, "preset $pitch is centered at $center")
         }
     }
 
     @Test
     fun `a preset near the bottom of the range uses fewer carriers rather than skewing`() {
         // 100 Hz cannot hold three carriers 100 Hz apart without going below zero, so it
-        // takes two and stays honest about where it is centred.
+        // takes two and stays honest about where it is centered.
         val profile = Presets.profileFor(100.0, tuning, carrierCount = 3, nowMillis = 0L)
         val scheduler = SessionScheduler(
             profile,
@@ -98,9 +98,9 @@ class PresetsTest {
         )
 
         assertEquals(2, scheduler.carrierCount)
-        val centres = scheduler.parametersAt(kotlin.time.Duration.ZERO).pairs.map { it.centreHz }
-        assertTrue(centres.min() > 40.0, "lowest carrier ${centres.min()} is still near the floor")
-        assertEquals(100.0, centres.average(), 6.0, "carriers average ${centres.average()}")
+        val centers = scheduler.parametersAt(kotlin.time.Duration.ZERO).pairs.map { it.centerHz }
+        assertTrue(centers.min() > 40.0, "lowest carrier ${centers.min()} is still near the floor")
+        assertEquals(100.0, centers.average(), 6.0, "carriers average ${centers.average()}")
     }
 
     @Test

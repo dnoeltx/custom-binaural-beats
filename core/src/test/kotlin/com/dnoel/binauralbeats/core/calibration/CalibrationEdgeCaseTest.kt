@@ -68,12 +68,12 @@ class CalibrationEdgeCaseTest {
     }
 
     @Test
-    fun `widening keeps the centre the listener actually chose`() {
+    fun `widening keeps the center the listener actually chose`() {
         val state = sittingWhere { hz -> if (hz in 180.0..200.0) Verdict.RELAXING else Verdict.NOT_RELAXING }
         val profile = CalibrationSearch.result(state, tuning, 0L)!!
 
-        val centre = (profile.lowHz + profile.highHz) / 2
-        assertTrue(kotlin.math.abs(centre - 190.0) < 30.0, "widening moved the centre to $centre")
+        val center = (profile.lowHz + profile.highHz) / 2
+        assertTrue(kotlin.math.abs(center - 190.0) < 30.0, "widening moved the center to $center")
     }
 
     @Test

@@ -82,8 +82,8 @@ class CalibrationSearchTest {
         val nearTruth = (1..12).count { seed ->
             val listener = SimulatedListener(140.0, 260.0, mistakeRate = 0.1, seed = seed)
             val profile = CalibrationSearch.result(run(listener), tuning, nowMillis = 0L)
-            val centre = profile?.let { (it.lowHz + it.highHz) / 2 }
-            centre != null && abs(centre - 200.0) < 70.0
+            val center = profile?.let { (it.lowHz + it.highHz) / 2 }
+            center != null && abs(center - 200.0) < 70.0
         }
 
         assertTrue(nearTruth >= 10, "only $nearTruth of 12 noisy listeners landed near the truth")
@@ -106,9 +106,9 @@ class CalibrationSearchTest {
 
         val profile = CalibrationSearch.result(state, tuning, 0L)
         if (profile != null) {
-            val centre = (profile.lowHz + profile.highHz) / 2
+            val center = (profile.lowHz + profile.highHz) / 2
             assertTrue(
-                abs(centre - 200.0) > 40.0,
+                abs(center - 200.0) > 40.0,
                 "the fit somehow landed on a band the listener rejected outright",
             )
         }

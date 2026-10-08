@@ -69,11 +69,11 @@ class SessionSchedulerTest {
     fun `simultaneous carriers never sit closer than the measured minimum spacing`() {
         val scheduler = scheduler(wideProfile)
         forEachSample(10.hours) { at ->
-            val centres = scheduler.parametersAt(at).pairs.map { it.centreHz }.sorted()
-            for (i in 1 until centres.size) {
+            val centers = scheduler.parametersAt(at).pairs.map { it.centerHz }.sorted()
+            for (i in 1 until centers.size) {
                 assertTrue(
-                    centres[i] - centres[i - 1] >= tuning.minCarrierSpacingHz - 0.001,
-                    "carriers ${centres[i - 1]} and ${centres[i]} were too close at $at",
+                    centers[i] - centers[i - 1] >= tuning.minCarrierSpacingHz - 0.001,
+                    "carriers ${centers[i - 1]} and ${centers[i]} were too close at $at",
                 )
             }
         }
@@ -118,7 +118,7 @@ class SessionSchedulerTest {
                 "gain moved too fast at $at",
             )
             for (i in now.pairs.indices) {
-                val moved = abs(now.pairs[i].centreHz - previous.pairs[i].centreHz)
+                val moved = abs(now.pairs[i].centerHz - previous.pairs[i].centerHz)
                 assertTrue(
                     moved / seconds * 60.0 <= tuning.maxDriftHzPerMinute + 1e-6,
                     "carrier $i moved ${moved}Hz in ${seconds}s at $at",

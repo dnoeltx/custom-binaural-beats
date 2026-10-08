@@ -35,6 +35,10 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v6.3.0
 
+      # Cheap and fast, so it runs before anything that compiles.
+      - name: Prose (American spelling, no em dashes)
+        run: bash tools/check-prose.sh
+
       # :core:check runs the JVM tests and the constitution VII guard that fails
       # if :core ever gains an Android dependency.
       - name: Core module (tests + Android-free check)

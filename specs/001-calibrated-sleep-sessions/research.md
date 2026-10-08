@@ -127,7 +127,7 @@ marginally better than 80, but not much, probably around 100"), and two tones wa
 while sounding clean at 120. Two independent judgments put the boundary just under 100 Hz.
 
 This agrees with the auditory critical band, which is roughly 100 Hz wide around a 200 Hz
-centre: tones inside one band beat against each other and sound rough, and the roughness
+center: tones inside one band beat against each other and sound rough, and the roughness
 largely goes once they are further apart. The listener found the boundary the literature
 describes, which is evidence the number is real rather than a preference for one file.
 
@@ -223,7 +223,7 @@ fitted band slightly. One bad verdict in a staircase sends it in the wrong direc
 costs several more tones to recover. The failure degrades gently instead of sharply.
 
 **It also produces what the app needs.** The profile is a range, `lowHz` and `highHz`, not
-a centre. A fit yields both edges directly; a threshold search yields one number.
+a center. A fit yields both edges directly; a threshold search yields one number.
 
 ### Shape
 
@@ -232,7 +232,7 @@ a centre. A fit yields both edges directly; a threshold search yields one number
 2. **Refinement pass**: a handful more placed near the two candidate edges.
 3. **Fit** a band across every verdict gathered, both passes together.
 4. **Widen if necessary** to satisfy FR-020a, which requires a range wide enough for two
-   carriers at the measured minimum spacing plus the beat margin, centred on the same
+   carriers at the measured minimum spacing plus the beat margin, centered on the same
    place, recording that it was widened.
 
 Every tone is a real binaural pair at a fixed sleep-appropriate beat rate (FR-021a), so

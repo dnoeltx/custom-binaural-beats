@@ -67,7 +67,7 @@ class OutputLossPolicyTest {
 
     @Test
     fun `a session never falls back to another output`() {
-        // Stated as a test because it is the one behaviour with a safety edge: waking to
+        // Stated as a test because it is the one behavior with a safety edge: waking to
         // a phone speaker playing tones at 3am is exactly the surprise this app forbids.
         assertEquals(false, OutputLossPolicy.MAY_FALL_BACK_TO_ANOTHER_OUTPUT)
     }

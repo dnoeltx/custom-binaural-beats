@@ -10,33 +10,33 @@ import com.dnoel.binauralbeats.core.model.ProfileSource
  *
  * A preset must sound like the pitch it names, so the range is built as narrow as the
  * carriers allow: enough room for `count - 1` gaps at the minimum spacing, plus the
- * margin a pair needs around its own centre, and nothing more. A wider range spreads the
+ * margin a pair needs around its own center, and nothing more. A wider range spreads the
  * carriers away from the chosen pitch, which is what made a 200 Hz preset play a tone
  * near 50 Hz on the first hardware run.
  */
 object Presets {
 
     fun profileFor(
-        centreHz: Double,
+        centerHz: Double,
         tuning: SessionTuning,
         carrierCount: Int,
         nowMillis: Long,
     ): ListenerProfile {
-        val requested = if (PerceptualBounds.isCarrierPerceptible(centreHz)) {
-            centreHz
+        val requested = if (PerceptualBounds.isCarrierPerceptible(centerHz)) {
+            centerHz
         } else {
             tuning.defaultPresetHz
         }
 
         val lowest = MIN_CARRIER_HZ
         val highest = PerceptualBounds.MAX_CARRIER_HZ - 1.0
-        val centre = requested.coerceIn(lowest + MIN_HALF_WIDTH_HZ, highest - MIN_HALF_WIDTH_HZ)
+        val center = requested.coerceIn(lowest + MIN_HALF_WIDTH_HZ, highest - MIN_HALF_WIDTH_HZ)
 
         // How much room there is on the tighter side. The range is built symmetrically
         // around the chosen pitch, so the narrower side governs both.
-        val availableHalf = minOf(centre - lowest, highest - centre)
+        val availableHalf = minOf(center - lowest, highest - center)
 
-        // As many carriers as fit, honestly centred, rather than three carriers and a
+        // As many carriers as fit, honestly centered, rather than three carriers and a
         // range shoved sideways. A 100 Hz preset cannot hold three carriers 100 Hz apart
         // without going below zero, so it takes two.
         //
@@ -50,14 +50,14 @@ object Presets {
             .coerceAtLeast(MIN_HALF_WIDTH_HZ)
 
         return ListenerProfile(
-            lowHz = centre - halfWidth,
-            highHz = centre + halfWidth,
+            lowHz = center - halfWidth,
+            highHz = center + halfWidth,
             source = ProfileSource.PRESET,
             createdAtEpochMillis = nowMillis,
         )
     }
 
-    /** Room for the gaps between carriers, plus the margin a pair needs around its centre. */
+    /** Room for the gaps between carriers, plus the margin a pair needs around its center. */
     private fun halfWidthFor(count: Int, tuning: SessionTuning): Double =
         tuning.requiredWidthHz(count) / 2.0 + tuning.maxBeatRateHz / 2.0
 

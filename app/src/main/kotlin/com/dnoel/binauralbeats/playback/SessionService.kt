@@ -175,10 +175,10 @@ class SessionService : Service() {
         }
     }
 
-    /** A preset choice becomes a profile centred on the chosen pitch (see Presets). */
+    /** A preset choice becomes a profile centered on the chosen pitch (see Presets). */
     private fun presetProfile(presetHz: Double, state: AppState): ListenerProfile =
         Presets.profileFor(
-            centreHz = presetHz,
+            centerHz = presetHz,
             tuning = SessionTuning.MEASURED,
             carrierCount = state.settings.carrierCount,
             nowMillis = System.currentTimeMillis(),

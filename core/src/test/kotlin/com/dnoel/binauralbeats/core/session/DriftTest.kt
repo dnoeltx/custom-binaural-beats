@@ -31,8 +31,8 @@ class DriftTest {
     fun `carriers actually move over a night`() {
         // The opposite failure to drifting too fast: a drift so small it is decorative.
         val scheduler = scheduler()
-        val first = scheduler.parametersAt(1.hours).pairs.map { it.centreHz }
-        val later = scheduler.parametersAt(4.hours).pairs.map { it.centreHz }
+        val first = scheduler.parametersAt(1.hours).pairs.map { it.centerHz }
+        val later = scheduler.parametersAt(4.hours).pairs.map { it.centerHz }
         val moved = first.zip(later).map { (a, b) -> abs(a - b) }
         assertTrue(moved.any { it > 5.0 }, "carriers barely moved in three hours: $moved")
     }
@@ -42,10 +42,10 @@ class DriftTest {
         val scheduler = scheduler()
         val step = 15.seconds
         var at = Duration.ZERO
-        var previous = scheduler.parametersAt(at).pairs.map { it.centreHz }
+        var previous = scheduler.parametersAt(at).pairs.map { it.centerHz }
         while (at < 10.hours) {
             at += step
-            val now = scheduler.parametersAt(at).pairs.map { it.centreHz }
+            val now = scheduler.parametersAt(at).pairs.map { it.centerHz }
             for (i in now.indices) {
                 val hzPerMinute = abs(now[i] - previous[i]) * (60.0 / step.inWholeSeconds)
                 assertTrue(
@@ -63,19 +63,19 @@ class DriftTest {
         // Sampled every 23 seconds rather than every minute: a sine sampled on a period
         // that happens to divide its own can alias into looking almost static, which is a
         // property of the sampling and not of the audio.
-        val centres = (0..1560).map { scheduler.parametersAt((it * 23).seconds).pairs.first().centreHz }
+        val centers = (0..1560).map { scheduler.parametersAt((it * 23).seconds).pairs.first().centerHz }
 
         assertTrue(
-            centres.max() - centres.min() > 2.0,
-            "carrier barely moved across the night: span ${centres.max() - centres.min()}",
+            centers.max() - centers.min() > 2.0,
+            "carrier barely moved across the night: span ${centers.max() - centers.min()}",
         )
-        assertTrue(centres.zipWithNext().any { (a, b) -> b > a + 0.01 }, "never drifted upward")
+        assertTrue(centers.zipWithNext().any { (a, b) -> b > a + 0.01 }, "never drifted upward")
         assertTrue(
-            centres.zipWithNext().any { (a, b) -> b < a - 0.01 },
+            centers.zipWithNext().any { (a, b) -> b < a - 0.01 },
             "never reversed direction, so it must be pinned at an edge",
         )
         assertTrue(
-            centres.all { it >= profile.lowHz && it <= profile.highHz },
+            centers.all { it >= profile.lowHz && it <= profile.highHz },
             "drift left the profile range",
         )
     }
@@ -85,11 +85,11 @@ class DriftTest {
         val scheduler = scheduler()
         var at = Duration.ZERO
         while (at <= 10.hours) {
-            val centres = scheduler.parametersAt(at).pairs.map { it.centreHz }.sorted()
-            for (i in 1 until centres.size) {
+            val centers = scheduler.parametersAt(at).pairs.map { it.centerHz }.sorted()
+            for (i in 1 until centers.size) {
                 assertTrue(
-                    centres[i] - centres[i - 1] >= tuning.minCarrierSpacingHz - 0.001,
-                    "drift pushed carriers to ${centres[i - 1]} and ${centres[i]} at $at",
+                    centers[i] - centers[i - 1] >= tuning.minCarrierSpacingHz - 0.001,
+                    "drift pushed carriers to ${centers[i - 1]} and ${centers[i]} at $at",
                 )
             }
             at += 31.seconds

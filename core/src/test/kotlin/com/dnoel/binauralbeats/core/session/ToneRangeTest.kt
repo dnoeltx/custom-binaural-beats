@@ -34,9 +34,9 @@ class ToneRangeTest {
     }
 
     @Test
-    fun `the reported range covers the tones, not just the carrier centres`() {
-        // A pair splits around its centre, and SC-005 is about tones. The lowest tone is
-        // half a beat below the lowest centre.
+    fun `the reported range covers the tones, not just the carrier centers`() {
+        // A pair splits around its center, and SC-005 is about tones. The lowest tone is
+        // half a beat below the lowest center.
         val scheduler = scheduler()
         val range = scheduler.toneRangeOver(2.hours)
 
