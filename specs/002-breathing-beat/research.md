@@ -57,6 +57,18 @@ A real device has `"beatArc":"DESCEND_THEN_VARY"` in its stored state right now.
 
 **Alternatives considered**: keeping the constant as deprecated, which leaves a dead option that some future screen will eventually render; and bumping the schema version, which under our own fallback rule destroys the saved profile, the very thing a listener would most hate to lose since recovering it costs another calibration sitting.
 
+### What the device actually had (T201 and T202, captured 2026-10-08)
+
+The payload was captured before any build without the arc ran, and it says something the plan did not assume: **the stored arc is `DESCEND_THEN_HOLD`, not the removed `DESCEND_THEN_VARY`.**
+
+That is because the settings screen offering a choice of arc was never built. It is tasks T054 to T059 of feature 001, still unstarted, so nothing has ever been able to select the arc that is now being removed.
+
+**What this changes, and what it does not.** The migration hazard is theoretical for this particular device rather than imminent, so the risk of losing a profile on upgrade is lower than feared. The tolerant serializer is still worth building, for a reason that outlives this arc: our fallback rule turns **any** unreadable stored value into defaults, so every future enum change carries the same hazard, and the serializer is the general defense rather than a one time fix.
+
+**The fixture is therefore synthetic**, and labeled as such: `core/src/test/resources/stored-state-with-removed-arc.json` is the real captured file with the arc value swapped to the removed one, so it keeps a real profile shape, a real session record and a real diagnostics log around the value under test. The untouched capture is kept beside it as `stored-state-before-arc-removal.json`.
+
+**Bonus from the capture.** The diagnostics record added last week held five entries, including a session from 2026-10-07 21:30 to 2026-10-08 06:28: **8.96 hours, ended by the listener, zero underruns**. That is the number that rotated out of the system log twice before anyone could read it, and it is the first durable evidence for SC-001 of feature 001.
+
 ## Measurement, carried into tasks
 
 Nothing numeric is decided here. The candidates the listener preferred on 2026-10-08 are recorded in the spec, and the tasks will pin:
