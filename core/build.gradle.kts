@@ -22,6 +22,15 @@ dependencies {
 
 tasks.test {
     useJUnitPlatform()
+
+    // Forward the golden file capture flag into the forked test JVM. Gradle's -D sets the
+    // property on its own process, not on the test runner, so without this the capture
+    // branch silently never runs and the test just reports a missing fixture.
+    // Read through providers so the configuration cache stays valid.
+    systemProperty(
+        "captureReference",
+        providers.systemProperty("captureReference").getOrElse("false"),
+    )
 }
 
 // T008: fail the build if :core ever gains an Android dependency.
