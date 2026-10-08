@@ -1,6 +1,5 @@
 package com.dnoel.binauralbeats.core.model
 
-import com.dnoel.binauralbeats.core.diagnostics.SessionEnding
 import kotlinx.serialization.Serializable
 
 /**
@@ -182,8 +181,6 @@ data class AppState(
     val settings: SessionConfiguration = SessionConfiguration(),
     val calibrationInProgress: CalibrationSession? = null,
     val lastSession: SessionRecord? = null,
-    /** FR-029a: a capped log of how recent sessions ended, newest first. */
-    val recentEndings: List<SessionEnding> = emptyList(),
 ) {
     companion object {
         const val CURRENT_SCHEMA_VERSION: Int = 1

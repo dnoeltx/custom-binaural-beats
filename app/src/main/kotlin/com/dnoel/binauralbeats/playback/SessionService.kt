@@ -7,8 +7,6 @@ import android.content.pm.ServiceInfo
 import android.os.IBinder
 import android.util.Log
 import com.dnoel.binauralbeats.core.audio.SessionRenderer
-import com.dnoel.binauralbeats.core.diagnostics.SessionDiagnostics
-import com.dnoel.binauralbeats.core.diagnostics.SessionEnding
 import com.dnoel.binauralbeats.core.model.AppState
 import com.dnoel.binauralbeats.core.model.EndReason
 import com.dnoel.binauralbeats.core.model.ListenerProfile
@@ -270,24 +268,13 @@ class SessionService : Service() {
                     record.renderSeed,
                 ).toneRangeOver(played)
 
-                // FR-029a: the capped diagnostics log, so the morning after a long run
-                // can be assessed from the app rather than from a system log that has
-                // already rotated away.
-                val ending = SessionEnding(
-                    startedAtEpochMillis = record.startedAtEpochMillis,
-                    endedAtEpochMillis = endedAt,
-                    endReason = reason,
-                    underrunCount = underruns,
-                )
-
                 store.write(
                     state.copy(
                         lastSession = record.copy(
                             endedAtEpochMillis = endedAt,
                             endReason = reason,
                             carrierSummary = listOf(toneRange.start, toneRange.endInclusive),
-                        ),
-                        recentEndings = SessionDiagnostics.record(state.recentEndings, ending),
+                        )
                     )
                 )
             }

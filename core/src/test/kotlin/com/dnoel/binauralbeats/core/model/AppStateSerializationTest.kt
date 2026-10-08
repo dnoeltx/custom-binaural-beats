@@ -48,14 +48,6 @@ class AppStateSerializationTest {
             renderSeed = 987_654_321L,
             carrierSummary = listOf(205.0, 232.0, 251.0),
         ),
-        recentEndings = listOf(
-            com.dnoel.binauralbeats.core.diagnostics.SessionEnding(
-                startedAtEpochMillis = 1_725_900_000_000L,
-                endedAtEpochMillis = 1_725_930_000_000L,
-                endReason = EndReason.STOPPED_BY_LISTENER,
-                underrunCount = 0,
-            ),
-        ),
     )
 
     @Test
