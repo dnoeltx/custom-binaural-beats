@@ -20,7 +20,7 @@ data class SessionTuning(
 
     /**
      * M003: below this, simultaneous carriers beat against each other and sound rough.
-     * Matches the auditory critical band around a 200 Hz centre.
+     * Matches the auditory critical band around a 200 Hz center.
      */
     val minCarrierSpacingHz: Double,
 

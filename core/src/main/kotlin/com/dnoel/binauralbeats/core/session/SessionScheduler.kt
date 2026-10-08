@@ -14,7 +14,7 @@ import kotlin.time.Duration.Companion.seconds
 
 /** Two tones, one per ear. Their difference is the beat. */
 data class CarrierPair(val leftHz: Double, val rightHz: Double) {
-    val centreHz: Double get() = (leftHz + rightHz) / 2.0
+    val centerHz: Double get() = (leftHz + rightHz) / 2.0
     val beatHz: Double get() = rightHz - leftHz
 }
 
@@ -48,8 +48,8 @@ class SessionScheduler(
      * preference, so spacing wins and the configured count is a maximum (research M003).
      */
     /**
-     * A pair straddles its centre by half the beat rate, and SC-005 requires every tone,
-     * not every centre, to lie inside the listener's range. So the usable band is inset
+     * A pair straddles its center by half the beat rate, and SC-005 requires every tone,
+     * not every center, to lie inside the listener's range. So the usable band is inset
      * by half the largest beat rate the session can reach. Costs about 2 Hz; caught by
      * the range test, which found tones 0.26 Hz outside an edge.
      */
@@ -65,7 +65,7 @@ class SessionScheduler(
     private val driftRangeHz: Double = driftRange()
 
     /** Where each carrier sits when drift is at rest, spread evenly across the range. */
-    private val restingCentres: List<Double> = restingCentres()
+    private val restingCenters: List<Double> = restingCenters()
 
     private val plannedDuration: Duration? = when (val end = configuration.endBehavior) {
         is EndBehavior.AfterDuration -> Duration.parse("${end.durationMillis}ms")
@@ -87,9 +87,9 @@ class SessionScheduler(
         }
         val beatRateHz = beatRateAt(elapsed)
         for (index in 0 until carrierCount) {
-            val centre = restingCentres[index] + driftAt(elapsed, index)
-            leftHz[index] = centre - beatRateHz / 2.0
-            rightHz[index] = centre + beatRateHz / 2.0
+            val center = restingCenters[index] + driftAt(elapsed, index)
+            leftHz[index] = center - beatRateHz / 2.0
+            rightHz[index] = center + beatRateHz / 2.0
         }
         return gainAt(elapsed)
     }
@@ -99,7 +99,7 @@ class SessionScheduler(
      *
      * Computed from the scheduler rather than observed from the audio thread: the
      * scheduler is pure, so walking it is exact, costs nothing, and keeps measurement out
-     * of the rendering path. Reports tones, not carrier centres, because SC-005 is about
+     * of the rendering path. Reports tones, not carrier centers, because SC-005 is about
      * what the listener actually hears.
      */
     fun toneRangeOver(
@@ -122,11 +122,11 @@ class SessionScheduler(
 
     fun parametersAt(elapsed: Duration): SessionParameters {
         val beatRateHz = beatRateAt(elapsed)
-        val pairs = restingCentres.mapIndexed { index, centre ->
-            val driftedCentre = centre + driftAt(elapsed, index)
+        val pairs = restingCenters.mapIndexed { index, center ->
+            val driftedCenter = center + driftAt(elapsed, index)
             CarrierPair(
-                leftHz = driftedCentre - beatRateHz / 2.0,
-                rightHz = driftedCentre + beatRateHz / 2.0,
+                leftHz = driftedCenter - beatRateHz / 2.0,
+                rightHz = driftedCenter + beatRateHz / 2.0,
             )
         }
         return SessionParameters(pairs, beatRateHz, gainAt(elapsed))
@@ -224,7 +224,7 @@ class SessionScheduler(
      * that wandering never crosses it. The spare width left after the minimum spacing is
      * spread between the gaps, which is what gives drift room to move in.
      */
-    private fun restingCentres(): List<Double> {
+    private fun restingCenters(): List<Double> {
         if (carrierCount == 1) return listOf((usableLowHz + usableHighHz) / 2.0)
         val spread = usableWidthHz - 2 * driftRangeHz
         val separation = spread / (carrierCount - 1)

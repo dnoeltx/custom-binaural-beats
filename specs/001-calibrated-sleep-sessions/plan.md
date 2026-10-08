@@ -108,7 +108,7 @@ Structure in `:core`, behind the `CalibrationSearch` contract already defined in
   coarse pass, near the candidate edges in the refinement pass, and null when both passes
   are done or the maximum number of judgments is reached (FR-020).
 - **`result(state)`** fits a band across all judgments from both passes, then applies
-  FR-020a's minimum width, widening around the same centre and recording that it did.
+  FR-020a's minimum width, widening around the same center and recording that it did.
 - An all-rejecting or all-accepting listener yields **no result** rather than a fabricated
   band, and the caller offers a retry or a preset (spec edge case).
 

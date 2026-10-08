@@ -51,7 +51,7 @@ State transitions: IN_PROGRESS to COMPLETED (a range was found, or the maximum n
 
 | Field | Type | Notes |
 |---|---|---|
-| `carrierHz` | Double | The pitch presented (the pair's centre) |
+| `carrierHz` | Double | The pitch presented (the pair's center) |
 | `verdict` | enum: RELAXING, NOT_RELAXING | The two tap targets |
 | `presentedAt` | Instant | |
 | `responseMillis` | Long | Time from tone start to tap; lets a later analysis spot inattentive or reflex answers |

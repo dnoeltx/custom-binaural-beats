@@ -283,15 +283,15 @@ object CalibrationSearch {
      */
     private const val DISLIKE_WEIGHT = -2.0
 
-    /** Grows a band to [required] width around its own centre, staying perceptible. */
+    /** Grows a band to [required] width around its own center, staying perceptible. */
     private fun widen(band: Band, required: Double): Pair<Double, Double> {
-        val centre = (band.low + band.high) / 2
+        val center = (band.low + band.high) / 2
         val half = required / 2
         val lowest = 40.0
         val highest = PerceptualBounds.MAX_CARRIER_HZ - 1.0
 
-        var low = centre - half
-        var high = centre + half
+        var low = center - half
+        var high = center + half
         if (low < lowest) {
             high += lowest - low
             low = lowest
