@@ -16,6 +16,7 @@
 - Q: Over a long night, should the carrier pitches stay fixed, or move slowly within the preferred range? → A: Very slow drift within the range, slow enough that no moment of change is perceptible.
 - Q: During calibration, should each judged tone be a real binaural pair or a single steady tone? → A: Real binaural pairs, with the beat rate held at one fixed sleep-appropriate value throughout.
 - Q: Should the app keep a record of past sessions, or remember nothing beyond profile and settings? → A: Remember the most recent session only; no accumulating history.
+- Q: A full night ran successfully but its underrun count had rotated out of the system log by morning, for the second time. Keep "no accumulating history" as written, or allow a diagnostics record? → A: Allow a bounded one (new FR-029a, at most 20 endings), because the alternative is a product whose central durability claim can only be checked within a few hours of the night it describes.
 - Q: The measured 100 Hz minimum spacing means a narrow preferred range cannot hold the two or three carriers FR-003 requires. Accept single-carrier sessions, or constrain calibration to produce a usable range? → A: Constrain calibration (new FR-020a); a single carrier is a thinner sound than was approved, and the range is calibration's output to guarantee.
 
 ## User Scenarios & Testing *(mandatory)*
@@ -155,6 +156,9 @@ In settings, the listener reviews their saved profile, adjusts the preferred ran
 
 - **FR-028**: The profile, configuration, and calibration results MUST be stored on the device, MUST survive reinstalling the app through the platform's own backup, and MUST NOT be sent to any service operated by this project.
 - **FR-029**: The system MUST retain a record of the most recent session only: when it started, how it ended, and what it played. Starting a new session MUST replace it. No accumulating history is kept, and no session history screen is part of this feature.
+- **FR-029a**: The system MUST also retain a bounded diagnostics record of how recent sessions ended: at most 20 entries, each holding the start and end time, the end reason, the duration, and the count of audio underruns. Entries beyond the limit are discarded oldest first. This record MUST NOT be shown as a feature, and MUST stay on the device like everything else (FR-028).
+
+  Added 2026-10-08. The first full night ran 8 hours 58 minutes, but the underrun count, which is the evidence SC-001 and the research on buffer sizing actually turn on, had already rotated out of the system log by morning. Twice now a long run has been impossible to assess the next day. FR-029's "no accumulating history" was about not building a sleep diary nobody asked for; a capped list of endings is a different thing with a different purpose, and without it the app cannot be debugged by the person using it.
 
 ### Key Entities
 

@@ -22,23 +22,47 @@ object Presets {
         carrierCount: Int,
         nowMillis: Long,
     ): ListenerProfile {
-        val centre = if (PerceptualBounds.isCarrierPerceptible(centreHz)) {
+        val requested = if (PerceptualBounds.isCarrierPerceptible(centreHz)) {
             centreHz
         } else {
             tuning.defaultPresetHz
         }
 
-        val halfWidth = tuning.requiredWidthHz(carrierCount) / 2.0 + tuning.maxBeatRateHz / 2.0
-        val low = (centre - halfWidth).coerceAtLeast(MIN_CARRIER_HZ)
-        val high = (centre + halfWidth).coerceAtMost(PerceptualBounds.MAX_CARRIER_HZ - 1.0)
+        val lowest = MIN_CARRIER_HZ
+        val highest = PerceptualBounds.MAX_CARRIER_HZ - 1.0
+        val centre = requested.coerceIn(lowest + MIN_HALF_WIDTH_HZ, highest - MIN_HALF_WIDTH_HZ)
+
+        // How much room there is on the tighter side. The range is built symmetrically
+        // around the chosen pitch, so the narrower side governs both.
+        val availableHalf = minOf(centre - lowest, highest - centre)
+
+        // As many carriers as fit, honestly centred, rather than three carriers and a
+        // range shoved sideways. A 100 Hz preset cannot hold three carriers 100 Hz apart
+        // without going below zero, so it takes two.
+        //
+        // The previous version clamped a fixed half width at the bottom, which moved the
+        // whole band upward: "Low 100 Hz" became a range of 40 to 202 Hz and played tones
+        // near 56 and 186 Hz. Found by reading the record of a real night, not by a test,
+        // because no test knew what a preset was supposed to sound like.
+        val fittingCount = (carrierCount downTo 1).firstOrNull { halfWidthFor(it, tuning) <= availableHalf } ?: 1
+        val halfWidth = halfWidthFor(fittingCount, tuning)
+            .coerceAtMost(availableHalf)
+            .coerceAtLeast(MIN_HALF_WIDTH_HZ)
 
         return ListenerProfile(
-            lowHz = low,
-            highHz = high,
+            lowHz = centre - halfWidth,
+            highHz = centre + halfWidth,
             source = ProfileSource.PRESET,
             createdAtEpochMillis = nowMillis,
         )
     }
+
+    /** Room for the gaps between carriers, plus the margin a pair needs around its centre. */
+    private fun halfWidthFor(count: Int, tuning: SessionTuning): Double =
+        tuning.requiredWidthHz(count) / 2.0 + tuning.maxBeatRateHz / 2.0
+
+    /** Keeps a profile from collapsing to zero width at the very edge of the range. */
+    private const val MIN_HALF_WIDTH_HZ = 4.0
 
     /** Low enough to be a deep hum, high enough to be heard at sleeping volume. */
     private const val MIN_CARRIER_HZ = 40.0
