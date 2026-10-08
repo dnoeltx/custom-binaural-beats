@@ -47,6 +47,29 @@ Mutation check, run by hand and recorded in the PR: break one behavior deliberat
 
 Fresh install, no calibration. Open, choose a preset pitch, start. Expected: audio fades in, three taps or fewer, under two minutes from launch.
 
+### Reading the diagnostics (FR-029a)
+
+After any run, including one that ended while you slept:
+
+```
+adb shell run-as com.dnoel.binauralbeats cat files/app_state.json
+```
+
+`recentEndings` holds the last 20 endings, each with when the session started and ended,
+how it ended, and the underrun count. This exists because a run stopped after about two
+hours on 2026-10-05 and nothing survived to say why: the single most-recent-session record
+had been overwritten by a later test, and the system log had rotated.
+
+What the reasons mean when reading a morning-after record:
+
+- `STOPPED_BY_LISTENER`: the stop control was used.
+- `COMPLETED_AS_CONFIGURED`: the configured end behavior ran.
+- `OUTPUT_LOST`: the earbuds stayed away past the grace period, so the app ended it.
+- `INTERRUPTED`: audio focus was taken permanently, or the writer thread failed.
+- `UNKNOWN`: the process died without running any cleanup. The likeliest cause is the
+  system stopping the app, which on Samsung hardware means battery optimization is worth
+  checking first.
+
 ### M2. All-night playback (SC-001, FR-009)
 
 Start a session, lock the phone, leave it overnight with the earbuds in. Expected in the morning: still playing, no gaps or restarts. Verify afterwards from the session record and from `getUnderrunCount()` reported in logs. Run this at least once with Battery Saver enabled, since Battery Saver is known to increase underruns substantially (research R1).

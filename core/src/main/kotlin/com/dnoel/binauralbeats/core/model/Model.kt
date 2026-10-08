@@ -173,6 +173,22 @@ data class SessionRecord(
     val isRunning: Boolean get() = endedAtEpochMillis == null && endReason == null
 }
 
+/**
+ * One line of the diagnostics record (FR-029a): how a session ended, and nothing more.
+ *
+ * Deliberately small. Enough to answer "what happened last night", far short of the sleep
+ * diary FR-029 refuses to keep.
+ */
+@Serializable
+data class SessionEnding(
+    val startedAtEpochMillis: Long,
+    val endedAtEpochMillis: Long,
+    val endReason: EndReason,
+    val underrunCount: Int,
+) {
+    val durationMillis: Long get() = endedAtEpochMillis - startedAtEpochMillis
+}
+
 /** The single stored object (data-model.md). */
 @Serializable
 data class AppState(
@@ -181,6 +197,15 @@ data class AppState(
     val settings: SessionConfiguration = SessionConfiguration(),
     val calibrationInProgress: CalibrationSession? = null,
     val lastSession: SessionRecord? = null,
+    /**
+     * FR-029a. Added without bumping [CURRENT_SCHEMA_VERSION], and that is deliberate: the
+     * field has a default, so a file written before it existed still decodes. Bumping the
+     * version would be destructive, because our own rule treats an unknown version as
+     * unreadable and falls back to defaults, discarding the listener's saved profile on the
+     * first launch after an upgrade. Only a change that makes old files genuinely
+     * unreadable earns a bump.
+     */
+    val recentEndings: List<SessionEnding> = emptyList(),
 ) {
     companion object {
         const val CURRENT_SCHEMA_VERSION: Int = 1
