@@ -101,6 +101,23 @@ class AppStateSerializationTest {
     }
 
     @Test
+    fun `a file written before the diagnostics field existed still decodes, profile intact`() {
+        // The load-bearing claim behind adding recentEndings without bumping the schema
+        // version. Our own rule treats an unknown version as unreadable and falls back to
+        // defaults, so a bump would have discarded a saved profile on the first launch
+        // after an upgrade. This payload is the real shape from the phone, taken before the
+        // field existed.
+        val beforeTheField = """{"schemaVersion":1,"profile":{"lowHz":98.0,"highHz":302.0,"source":"PRESET","createdAtEpochMillis":1790131975142},"settings":{"beatArc":"DESCEND_THEN_HOLD","endBehavior":{"type":"com.dnoel.binauralbeats.core.model.EndBehavior.RunUntilStopped"},"carrierCount":3,"volumeWarningAcknowledged":false},"calibrationInProgress":null,"lastSession":null}"""
+
+        val decoded = AppStateSerialization.decode(beforeTheField)
+
+        assertNotNull(decoded.profile, "upgrading must not discard the saved profile")
+        assertEquals(98.0, decoded.profile!!.lowHz, 0.001)
+        assertEquals(3, decoded.settings.carrierCount)
+        assertTrue(decoded.recentEndings.isEmpty(), "the new field should default to empty")
+    }
+
+    @Test
     fun `an unknown field in stored data is ignored rather than fatal`() {
         // A newer build that added a field, then a downgrade. Losing the profile here
         // would be a real failure for the listener.

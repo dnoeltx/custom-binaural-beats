@@ -11,9 +11,11 @@ import com.dnoel.binauralbeats.core.model.AppState
 import com.dnoel.binauralbeats.core.model.EndReason
 import com.dnoel.binauralbeats.core.model.ListenerProfile
 import com.dnoel.binauralbeats.core.model.ProfileSource
+import com.dnoel.binauralbeats.core.model.SessionEnding
 import com.dnoel.binauralbeats.core.model.SessionRecord
 import com.dnoel.binauralbeats.core.playback.OutputAction
 import com.dnoel.binauralbeats.core.playback.PlaybackAction
+import com.dnoel.binauralbeats.core.playback.SessionDiagnostics
 import com.dnoel.binauralbeats.core.session.Presets
 import com.dnoel.binauralbeats.core.session.SessionScheduler
 import com.dnoel.binauralbeats.core.session.SessionTuning
@@ -268,13 +270,26 @@ class SessionService : Service() {
                     record.renderSeed,
                 ).toneRangeOver(played)
 
+                val completed = state.copy(
+                    lastSession = record.copy(
+                        endedAtEpochMillis = endedAt,
+                        endReason = reason,
+                        carrierSummary = listOf(toneRange.start, toneRange.endInclusive),
+                    )
+                )
+
+                // FR-029a: the most recent session record is overwritten by the next night,
+                // which is what destroyed the evidence when a run stopped after two hours.
+                // This line survives.
                 store.write(
-                    state.copy(
-                        lastSession = record.copy(
+                    SessionDiagnostics.record(
+                        completed,
+                        SessionEnding(
+                            startedAtEpochMillis = record.startedAtEpochMillis,
                             endedAtEpochMillis = endedAt,
                             endReason = reason,
-                            carrierSummary = listOf(toneRange.start, toneRange.endInclusive),
-                        )
+                            underrunCount = underruns,
+                        ),
                     )
                 )
             }

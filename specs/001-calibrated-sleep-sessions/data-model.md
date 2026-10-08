@@ -83,6 +83,26 @@ The most recent session only (FR-029).
 | `renderSeed` | Long | Makes the night reproducible offline (research R5) |
 | `carrierSummary` | List of Double | The pitch range actually visited, sufficient to check SC-005 |
 
+### SessionEnding
+
+One line of the diagnostics record (FR-029a). Deliberately small: enough to tell what
+happened, nothing that would amount to a sleep diary.
+
+| Field | Type | Notes |
+|---|---|---|
+| `startedAtEpochMillis` | Long | |
+| `endedAtEpochMillis` | Long | |
+| `endReason` | EndReason | The same reasons a `SessionRecord` carries |
+| `underrunCount` | Int | Zero over a full night is the requirement (research R1) |
+
+Held in `AppState.recentEndings`, newest last, capped at 20.
+
+**Added without bumping `schemaVersion`, on purpose.** The field has a default, so a file
+written before it existed decodes cleanly. Bumping the version would do real damage: our
+own rule treats an unknown version as unreadable and falls back to defaults, so the first
+launch after an upgrade would discard the listener's saved profile and settings. Additive
+fields do not need a bump; only a change that makes old files genuinely unreadable does.
+
 ### Sound layer model (FR-014)
 
 **SoundLayer** is the contract, not a stored entity: a source that fills a buffer for a time window and carries its own gain envelope. **BinauralToneLayer** is the only implementation in this feature. A session holds a list of layers and a mixer sums them. Adding a layer type later means adding an implementation, with no change to the scheduler, the mixer, or calibration.
